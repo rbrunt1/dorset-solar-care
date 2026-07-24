@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact & Enquiries | Dorset Solar Care</title>
+<meta name="description" content="Not ready to subscribe yet? Send us your details and questions and we'll get back to you.">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+      Dorset Solar Care
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#0f4c3a" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="service-area.html">Service Area</a></li>
+      <li><a href="about.html">About &amp; Trust</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="contact.html" class="btn btn-secondary btn-sm">Get a Quote</a>
+      <a href="pricing.html" class="btn btn-primary btn-sm">Subscribe</a>
+    </div>
+  </nav>
+</header>
+
+<div class="page-header">
+  <div class="wrap center">
+    <span class="eyebrow">Contact</span>
+    <h1>Not ready to subscribe? Just ask.</h1>
+    <p class="lede">Leave your details and a bit of context and we'll get back to you &mdash; no pressure, no obligation.</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap grid-2" style="gap:56px; align-items:flex-start;">
+    <div class="form-card">
+      <form id="enquiry-form">
+        <div class="field-row">
+          <div class="field">
+            <label for="en-name">Full name</label>
+            <input type="text" id="en-name" name="name" required>
+          </div>
+          <div class="field">
+            <label for="en-postcode">Postcode</label>
+            <input type="text" id="en-postcode" name="postcode" placeholder="e.g. DT1 1AA" required>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="en-email">Email</label>
+            <input type="email" id="en-email" name="email" required>
+          </div>
+          <div class="field">
+            <label for="en-phone">Phone (optional)</label>
+            <input type="tel" id="en-phone" name="phone">
+          </div>
+        </div>
+        <div class="field">
+          <label for="en-size">System size, if known (kWp)</label>
+          <input type="text" id="en-size" name="systemSize" placeholder="e.g. 4kWp, or 'not sure'">
+        </div>
+        <div class="field">
+          <label for="en-message">Message</label>
+          <textarea id="en-message" name="message" placeholder="Tell us what you're after &mdash; a one-off question, help choosing a plan, or anything else." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Send enquiry</button>
+        <p class="text-muted" id="enquiry-backend-note" style="font-size:0.8rem; margin-top:14px;">Submits to <code>/api/submit-enquiry</code> (a Netlify Function). If that's not deployed yet, this runs in demo mode instead.</p>
+      </form>
+
+      <div class="form-success" id="enquiry-success">
+        <div class="check-circle"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1a8a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Thanks, we've got your message</h3>
+        <p>We usually reply within 1 business day. If it's urgent, call us on 01202 000 000.</p>
+        <a href="index.html" class="btn btn-secondary">Back to home</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:22px;">
+        <div class="icon-tile">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4z" stroke="#146c4e" stroke-width="1.6"/><path d="M4 6l8 7 8-7" stroke="#146c4e" stroke-width="1.6"/></svg>
+        </div>
+        <h3>Email</h3>
+        <p><a href="mailto:hello@dorsetsolarcare.co.uk">hello@dorsetsolarcare.co.uk</a></p>
+      </div>
+      <div class="card" style="margin-bottom:22px;">
+        <div class="icon-tile blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8 9.7a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z" stroke="#16407a" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Phone</h3>
+        <p><a href="tel:+441202000000">01202 000 000</a><br>Mon&ndash;Fri, 8am&ndash;6pm</p>
+      </div>
+      <div class="card">
+        <div class="icon-tile amber">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 22s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12z" stroke="#b8791f" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="#b8791f" stroke-width="1.6"/></svg>
+        </div>
+        <h3>Coverage area</h3>
+        <p>Currently taking on customers across Dorset. <a href="service-area.html">Check your postcode →</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="brand" style="color:#fff;">
+          <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8"/></svg></span>
+          Dorset Solar Care
+        </a>
+        <p>Subscription-based solar panel cleaning, inspection and minor repairs for homes and businesses. Currently serving Dorset, England.</p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About &amp; Trust</a></li>
+          <li><a href="service-area.html">Service Area</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Plans</h4>
+        <ul>
+          <li><a href="pricing.html">Residential Plans</a></li>
+          <li><a href="pricing.html#commercial">Commercial Enquiry</a></li>
+          <li><a href="signup.html?plan=essential">Sign Up</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Get in touch</h4>
+        <ul>
+          <li><a href="mailto:hello@dorsetsolarcare.co.uk">hello@dorsetsolarcare.co.uk</a></li>
+          <li><a href="tel:+441202000000">01202 000 000</a></li>
+          <li>Dorset, England</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span data-year></span> Dorset Solar Care Ltd. Registered in England &amp; Wales. Maintenance &amp; cleaning services only &mdash; not an MCS-certified installer.</span>
+      <span>Direct Debit collection powered by GoCardless.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+  document.getElementById('enquiry-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    submitForm(this, '/api/submit-enquiry', (result, wasReal) => {
+      this.style.display = 'none';
+      const success = document.getElementById('enquiry-success');
+      success.classList.add('show');
+      if (!wasReal) {
+        const note = document.createElement('p');
+        note.className = 'text-muted';
+        note.style.fontSize = '0.8rem';
+        note.textContent = 'Demo mode: backend not reachable, so this was simulated rather than actually stored.';
+        success.appendChild(note);
+      }
+    });
+  });
+</script>
+</body>
+</html>

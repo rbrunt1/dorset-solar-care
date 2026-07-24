@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up | Dorset Solar Care</title>
+<meta name="description" content="Choose your plan, set up Direct Debit via GoCardless, and book your first solar panel clean and inspection.">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+      Dorset Solar Care
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#0f4c3a" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="service-area.html">Service Area</a></li>
+      <li><a href="about.html">About &amp; Trust</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="contact.html" class="btn btn-secondary btn-sm">Get a Quote</a>
+      <a href="pricing.html" class="btn btn-primary btn-sm">Subscribe</a>
+    </div>
+  </nav>
+</header>
+
+<div class="page-header">
+  <div class="wrap center">
+    <span class="eyebrow">Sign up</span>
+    <h1>Get your subscription set up</h1>
+    <p class="lede">Four quick steps: confirm your plan, add your details, set up Direct Debit, and book your first visit.</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap" style="max-width:760px;">
+
+    <ul class="steps" id="steps-nav">
+      <li class="current" data-step="plan">1. Plan</li>
+      <li data-step="details">2. Your details</li>
+      <li data-step="payment">3. Direct Debit</li>
+      <li data-step="booking">4. First visit</li>
+      <li data-step="done">5. Done</li>
+    </ul>
+
+    <!-- STEP 1: PLAN -->
+    <div class="step-panel active" data-panel="plan">
+      <div class="form-card">
+        <h3>Confirm your plan</h3>
+        <p class="text-muted">You can change this at any time before setting up payment.</p>
+        <div class="radio-tile-group" id="plan-tiles">
+          <label class="radio-tile" data-plan="essential">
+            <input type="radio" name="plan" value="essential">
+            <div class="plan-name" style="font-size:0.8rem;">Essential</div>
+            <div style="font-size:1.5rem; font-weight:800; margin:6px 0;">£12.99<span style="font-size:0.9rem; font-weight:600; color:var(--ink-500);">/mo</span></div>
+            <div class="text-muted" style="font-size:0.82rem;">Annual clean, no lock-in</div>
+          </label>
+          <label class="radio-tile" data-plan="standard">
+            <input type="radio" name="plan" value="standard">
+            <div class="plan-name" style="font-size:0.8rem;">Standard</div>
+            <div style="font-size:1.5rem; font-weight:800; margin:6px 0;">£19.99<span style="font-size:0.9rem; font-weight:600; color:var(--ink-500);">/mo</span></div>
+            <div class="text-muted" style="font-size:0.82rem;">Biannual + minor repairs</div>
+          </label>
+          <label class="radio-tile" data-plan="premium">
+            <input type="radio" name="plan" value="premium">
+            <div class="plan-name" style="font-size:0.8rem;">Premium</div>
+            <div style="font-size:1.5rem; font-weight:800; margin:6px 0;">£29.99<span style="font-size:0.9rem; font-weight:600; color:var(--ink-500);">/mo</span></div>
+            <div class="text-muted" style="font-size:0.82rem;">Quarterly + priority</div>
+          </label>
+        </div>
+        <div style="margin-top:26px; display:flex; justify-content:flex-end;">
+          <button class="btn btn-primary" id="to-details" disabled>Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: DETAILS -->
+    <div class="step-panel" data-panel="details">
+      <div class="form-card">
+        <h3>Your details</h3>
+        <form id="details-form">
+          <div class="field-row">
+            <div class="field"><label for="d-first">First name</label><input type="text" id="d-first" required></div>
+            <div class="field"><label for="d-last">Last name</label><input type="text" id="d-last" required></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="d-email">Email</label><input type="email" id="d-email" required></div>
+            <div class="field"><label for="d-phone">Phone</label><input type="tel" id="d-phone" required></div>
+          </div>
+          <div class="field"><label for="d-addr1">Address line 1</label><input type="text" id="d-addr1" required></div>
+          <div class="field-row">
+            <div class="field"><label for="d-city">Town / city</label><input type="text" id="d-city" required></div>
+            <div class="field"><label for="d-postcode">Postcode</label><input type="text" id="d-postcode" placeholder="e.g. DT1 1AA" required></div>
+          </div>
+          <div class="field">
+            <label for="d-notes">Anything we should know about access to your panels? (optional)</label>
+            <textarea id="d-notes" placeholder="e.g. side gate code, dog on site, roof access notes"></textarea>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:10px;">
+            <button type="button" class="btn btn-secondary" data-back="plan">Back</button>
+            <button type="submit" class="btn btn-primary">Continue to Direct Debit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- STEP 3: PAYMENT -->
+    <div class="step-panel" data-panel="payment">
+      <div class="form-card">
+        <h3>Set up your Direct Debit</h3>
+        <div class="summary-box" id="payment-summary"></div>
+        <p>Your subscription is billed monthly and collected securely by Direct Debit through <strong>GoCardless</strong>, the UK's leading bank-to-bank recurring payments provider. You'll set up a mandate once &mdash; no need to re-enter card details, and no card expiry issues.</p>
+        <div class="gc-mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="white" stroke-width="1.6"/><path d="M8 12h8M12 8v8" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Powered by GoCardless
+        </div>
+
+        <div id="gc-idle" style="margin-top:26px;">
+          <button class="btn btn-primary btn-block" id="start-mandate">Set up Direct Debit with GoCardless</button>
+        </div>
+
+        <div id="gc-loading" style="display:none; margin-top:26px; text-align:center; padding:20px;">
+          <p class="text-muted" id="gc-loading-text">Connecting to GoCardless…</p>
+        </div>
+
+        <div id="gc-done" style="display:none; margin-top:26px;">
+          <div class="result-banner show in-area" id="gc-done-banner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#146c4e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="gc-done-text">Direct Debit mandate authorised</span>
+          </div>
+        </div>
+
+        <div id="gc-error" style="display:none; margin-top:26px;">
+          <div class="result-banner show out-area">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#b8791f" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            <span id="gc-error-text">Something went wrong contacting GoCardless.</span>
+          </div>
+        </div>
+
+        <div class="integration-note" id="gc-integration-note">
+          <span>⚠️</span>
+          <span>
+            This calls a real <code>/api/gocardless-create-billing-request</code> Netlify Function, which
+            follows GoCardless's Billing Requests flow: create a <code>Billing Request</code> with a
+            <code>mandate_request</code> (scheme <code>bacs</code>, GBP), create a <code>Billing Request Flow</code>
+            with prefilled customer details, then redirect to the returned <code>authorisation_url</code> to
+            complete bank authorisation. It only goes live once <code>GOCARDLESS_ACCESS_TOKEN</code> is set as a
+            Netlify environment variable — until then, or if the backend isn't deployed, it runs in demo mode.
+            A production build should also confirm the mandate via a GoCardless webhook before activating the
+            subscription, rather than trusting the redirect alone.
+          </span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; margin-top:20px;">
+          <button type="button" class="btn btn-secondary" data-back="details">Back</button>
+          <button class="btn btn-primary" id="to-booking" disabled>Continue to booking</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: BOOKING -->
+    <div class="step-panel" data-panel="booking">
+      <div class="form-card">
+        <h3>Book your first visit</h3>
+        <p class="text-muted">Choose a preferred date and time slot for your first clean &amp; inspection. We'll confirm by email/SMS.</p>
+        <div class="booking-widget" id="booking-widget">
+          <div>
+            <div class="date-picker"></div>
+          </div>
+          <div>
+            <p class="slot-hint text-muted" style="margin-bottom:10px;">Pick a date to see available time slots.</p>
+            <div class="slot-list"></div>
+          </div>
+        </div>
+        <div class="integration-note">
+          <span>⚠️</span>
+          <span><strong>Backend wiring needed:</strong> slots shown here are generated client-side for demo purposes. A live version would pull real technician availability from a scheduling backend and confirm the booking via a <code>POST /api/bookings</code> call.</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:20px;">
+          <button type="button" class="btn btn-secondary" data-back="payment">Back</button>
+          <button class="btn btn-primary" id="to-done" disabled>Confirm sign-up</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5: DONE -->
+    <div class="step-panel" data-panel="done">
+      <div class="form-card center">
+        <div class="check-circle" style="margin:0 auto 20px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1a8a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>You're all set!</h3>
+        <p>Your subscription and first appointment are confirmed below. A confirmation email is on its way (in a live build).</p>
+        <div class="summary-box" id="final-summary" style="text-align:left;"></div>
+        <a href="index.html" class="btn btn-secondary">Back to home</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="brand" style="color:#fff;">
+          <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8"/></svg></span>
+          Dorset Solar Care
+        </a>
+        <p>Subscription-based solar panel cleaning, inspection and minor repairs for homes and businesses. Currently serving Dorset, England.</p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About &amp; Trust</a></li>
+          <li><a href="service-area.html">Service Area</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Plans</h4>
+        <ul>
+          <li><a href="pricing.html">Residential Plans</a></li>
+          <li><a href="pricing.html#commercial">Commercial Enquiry</a></li>
+          <li><a href="signup.html?plan=essential">Sign Up</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Get in touch</h4>
+        <ul>
+          <li><a href="mailto:hello@dorsetsolarcare.co.uk">hello@dorsetsolarcare.co.uk</a></li>
+          <li><a href="tel:+441202000000">01202 000 000</a></li>
+          <li>Dorset, England</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span data-year></span> Dorset Solar Care Ltd. Registered in England &amp; Wales. Maintenance &amp; cleaning services only &mdash; not an MCS-certified installer.</span>
+      <span>Direct Debit collection powered by GoCardless.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/booking.js"></script>
+<script src="js/signup.js"></script>
+</body>
+</html>

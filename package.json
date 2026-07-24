@@ -1,0 +1,9 @@
+{
+  "name": "dorset-solar-care-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Marketing, lead-capture, booking and subscription sign-up site for Dorset Solar Care, with Netlify Functions backend.",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

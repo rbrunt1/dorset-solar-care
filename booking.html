@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book an Appointment | Dorset Solar Care</title>
+<meta name="description" content="Existing subscriber or already spoken to us? Request a preferred appointment slot here.">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+      Dorset Solar Care
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#0f4c3a" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="service-area.html">Service Area</a></li>
+      <li><a href="about.html">About &amp; Trust</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="contact.html" class="btn btn-secondary btn-sm">Get a Quote</a>
+      <a href="pricing.html" class="btn btn-primary btn-sm">Subscribe</a>
+    </div>
+  </nav>
+</header>
+
+<div class="page-header">
+  <div class="wrap center">
+    <span class="eyebrow">Book an appointment</span>
+    <h1>Request a preferred visit slot</h1>
+    <p class="lede">Already a subscriber, or want to line up your first visit before finishing sign-up? Pick a date and time that works for you and we'll confirm it.</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap" style="max-width:820px;">
+    <div class="form-card">
+      <h3>1. Pick a date &amp; time</h3>
+      <div class="booking-widget" id="booking-widget-standalone">
+        <div>
+          <div class="date-picker"></div>
+        </div>
+        <div>
+          <p class="slot-hint text-muted" style="margin-bottom:10px;">Pick a date to see available time slots.</p>
+          <div class="slot-list"></div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:36px;">2. Your details</h3>
+      <form id="booking-form">
+        <div class="field-row">
+          <div class="field"><label for="b-name">Full name</label><input type="text" id="b-name" name="name" required></div>
+          <div class="field"><label for="b-postcode">Postcode</label><input type="text" id="b-postcode" name="postcode" placeholder="e.g. BH1 1AA" required></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="b-email">Email</label><input type="email" id="b-email" name="email" required></div>
+          <div class="field"><label for="b-phone">Phone</label><input type="tel" id="b-phone" name="phone" required></div>
+        </div>
+        <div class="field">
+          <label for="b-status">Are you already a subscriber?</label>
+          <select id="b-status" name="status">
+            <option value="existing">Yes, existing subscriber</option>
+            <option value="new">No, I'm signing up for the first time</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="booking-submit" disabled>Confirm requested slot</button>
+        <p class="text-muted" style="font-size:0.8rem; margin-top:14px;">Submits to <code>/api/submit-booking</code> (a Netlify Function). Slot availability shown above is still generated client-side &mdash; see README for wiring to a real scheduling backend.</p>
+      </form>
+
+      <div class="form-success" id="booking-success">
+        <div class="check-circle"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1a8a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Slot requested</h3>
+        <p id="booking-success-detail"></p>
+        <a href="index.html" class="btn btn-secondary">Back to home</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="brand" style="color:#fff;">
+          <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8"/></svg></span>
+          Dorset Solar Care
+        </a>
+        <p>Subscription-based solar panel cleaning, inspection and minor repairs for homes and businesses. Currently serving Dorset, England.</p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About &amp; Trust</a></li>
+          <li><a href="service-area.html">Service Area</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Plans</h4>
+        <ul>
+          <li><a href="pricing.html">Residential Plans</a></li>
+          <li><a href="pricing.html#commercial">Commercial Enquiry</a></li>
+          <li><a href="signup.html?plan=essential">Sign Up</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Get in touch</h4>
+        <ul>
+          <li><a href="mailto:hello@dorsetsolarcare.co.uk">hello@dorsetsolarcare.co.uk</a></li>
+          <li><a href="tel:+441202000000">01202 000 000</a></li>
+          <li>Dorset, England</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span data-year></span> Dorset Solar Care Ltd. Registered in England &amp; Wales. Maintenance &amp; cleaning services only &mdash; not an MCS-certified installer.</span>
+      <span>Direct Debit collection powered by GoCardless.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/booking.js"></script>
+<script>
+  let currentSelection = null;
+  initBookingWidget(document.getElementById('booking-widget-standalone'), (selection) => {
+    currentSelection = selection;
+    document.getElementById('booking-submit').disabled = false;
+  });
+
+  document.getElementById('booking-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!currentSelection) return;
+    const dateStr = currentSelection.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    submitForm(this, '/api/submit-booking', () => {
+      this.style.display = 'none';
+      document.getElementById('booking-success-detail').textContent =
+        `We've pencilled you in for ${dateStr}, ${currentSelection.slot.label}. We'll confirm by email shortly.`;
+      document.getElementById('booking-success').classList.add('show');
+    }, {
+      date: currentSelection.date.toISOString(),
+      slot: currentSelection.slot.label
+    });
+  });
+</script>
+</body>
+</html>
