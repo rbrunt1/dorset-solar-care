@@ -7,11 +7,21 @@ document.addEventListener('DOMContentLoaded', () => {
     links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => links.classList.remove('open')));
   }
 
-  // Mark active nav link based on current page filename
-  const path = window.location.pathname.split('/').pop() || 'index.html';
+  // Mark the active nav link.
+  //
+  // Both sides are normalised to a bare page name because the deployed URLs
+  // and the hrefs in the source don't necessarily match: Netlify's "Pretty
+  // URLs" post-processing rewrites href="pricing.html" to href="/pricing",
+  // while a visitor may still arrive on /pricing.html. Comparing raw strings
+  // meant nothing was ever highlighted on the live site.
+  const pageName = (value) => {
+    const withoutQuery = (value || '').split('#')[0].split('?')[0];
+    const base = withoutQuery.replace(/^.*\//, '').replace(/\.html$/i, '');
+    return base === '' ? 'index' : base.toLowerCase();
+  };
+  const current = pageName(window.location.pathname);
   document.querySelectorAll('.nav-links a').forEach(a => {
-    const href = a.getAttribute('href');
-    if (href === path || (path === '' && href === 'index.html')) {
+    if (pageName(a.getAttribute('href')) === current) {
       a.classList.add('active');
     }
   });
