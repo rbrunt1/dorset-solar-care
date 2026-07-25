@@ -14,6 +14,7 @@
 //
 // See: https://docs.netlify.com/build/data-and-storage/netlify-blobs/
 const { connectLambda, getStore } = require('@netlify/blobs');
+const { sendLeadNotification } = require('./notify');
 
 function newId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -90,9 +91,9 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
     });
   }
 
+  let record;
   try {
-    const record = await saveSubmission(event, storeName, prefix, build(data));
-    return jsonResponse(200, { ok: true, id: record.id });
+    record = await saveSubmission(event, storeName, prefix, build(data));
   } catch (err) {
     // Log loudly — this is the path where a real enquiry could be lost.
     console.error(`[${storeName}] FAILED to store submission:`, err);
@@ -101,6 +102,19 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
       detail: String(err && err.message ? err.message : err)
     });
   }
+
+  // Notify after the record is safely stored. sendLeadNotification never
+  // throws, and we deliberately don't let its result affect the response:
+  // the lead IS saved, so the visitor must see success even if the email
+  // fails. A failed send is logged for someone to pick up.
+  const notified = await sendLeadNotification(storeName, record, siteUrl());
+
+  return jsonResponse(200, { ok: true, id: record.id, notified: notified.sent === true });
+}
+
+/** Best guess at the public site URL, for context inside notification emails. */
+function siteUrl() {
+  return process.env.URL || process.env.DEPLOY_PRIME_URL || 'https://solarmot.co.uk';
 }
 
 module.exports = { saveSubmission, jsonResponse, handleSubmission };
