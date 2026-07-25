@@ -124,7 +124,7 @@ test('a storage failure returns 500, never a false success', async () => {
 test('submitted fields are persisted with an id and timestamp', async () => {
   reset();
   const res = await enquiry.handler(makeEvent({
-    name: 'Rob Brunt', email: 'rob@example.com', phone: '01202 000000',
+    name: 'Rob Brunt', email: 'rob@example.com', phone: '07891 110865',
     postcode: 'DT1 1AA', message: 'Panels look filthy'
   }));
 
