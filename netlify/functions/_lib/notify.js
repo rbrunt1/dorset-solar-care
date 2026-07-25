@@ -46,14 +46,40 @@ const FIELD_LABELS = {
   contact: 'Contact', serviceLevel: 'Service level', plan: 'Plan',
   status: 'Customer type', requestedDate: 'Requested date',
   requestedSlot: 'Requested slot', coverageStatus: 'Coverage status',
-  receivedAt: 'Received', id: 'Reference'
+  source: 'Came from', receivedAt: 'Received', id: 'Reference'
 };
 
 const escapeHtml = (value) => String(value)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
+/**
+ * Turn the attribution object into one readable line, e.g.
+ *   "google / cpc — spring-clean · landed on /pricing"
+ *   "Referred by facebook.com · landed on /"
+ *   "Direct · landed on /"
+ * Returns null when there's nothing worth printing, so the row is omitted.
+ */
+function formatSource(src) {
+  if (!src || typeof src !== 'object') return null;
+  const parts = [];
+  if (src.utmSource || src.utmMedium) {
+    let campaign = [src.utmSource, src.utmMedium].filter(Boolean).join(' / ');
+    if (src.utmCampaign) campaign += ` — ${src.utmCampaign}`;
+    parts.push(campaign);
+  } else if (src.referrer && src.referrer !== 'direct') {
+    let host = src.referrer;
+    try { host = new URL(src.referrer).hostname.replace(/^www\./, ''); } catch { /* keep raw */ }
+    parts.push(`Referred by ${host}`);
+  } else if (src.referrer === 'direct') {
+    parts.push('Direct');
+  }
+  if (src.landingPage) parts.push(`landed on ${src.landingPage}`);
+  return parts.length ? parts.join(' · ') : null;
+}
+
 function formatValue(key, value) {
+  if (key === 'source') return formatSource(value);
   if (value === null || value === undefined || value === '') return null;
   if (key === 'receivedAt' || key === 'requestedDate') {
     const d = new Date(value);
@@ -75,7 +101,7 @@ function formatValue(key, value) {
 /** Order fields so the useful ones lead, then anything else, then metadata. */
 function orderedEntries(record) {
   const lead = ['name', 'company', 'contact', 'email', 'phone', 'postcode'];
-  const tail = ['id', 'receivedAt'];
+  const tail = ['source', 'id', 'receivedAt'];
   const keys = Object.keys(record);
   const middle = keys.filter(k => !lead.includes(k) && !tail.includes(k));
   return [...lead, ...middle, ...tail]

@@ -91,9 +91,16 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
     });
   }
 
+  // Attribution is captured once here rather than in each build() so every
+  // form gets it automatically and none can silently forget it. It is stored
+  // separately from the customer's own fields so it can never collide with
+  // one, and it is deliberately NOT part of `required` — a missing source
+  // must never block a real lead.
+  const fields = { ...build(data), source: cleanSource(data.source) };
+
   let record;
   try {
-    record = await saveSubmission(event, storeName, prefix, build(data));
+    record = await saveSubmission(event, storeName, prefix, fields);
   } catch (err) {
     // Log loudly — this is the path where a real enquiry could be lost.
     console.error(`[${storeName}] FAILED to store submission:`, err);
@@ -117,4 +124,28 @@ function siteUrl() {
   return process.env.URL || process.env.DEPLOY_PRIME_URL || 'https://solarmot.co.uk';
 }
 
-module.exports = { saveSubmission, jsonResponse, handleSubmission };
+/**
+ * Sanitise the attribution object sent by the browser.
+ *
+ * This is untrusted input that goes straight into a stored record and a
+ * notification email, so it is whitelisted to known keys, coerced to strings
+ * and length-capped. Anything unexpected is dropped rather than stored.
+ * Returns null when there's nothing useful, so empty objects don't clutter
+ * the record.
+ */
+const SOURCE_KEYS = ['referrer', 'landingPage', 'utmSource', 'utmMedium', 'utmCampaign', 'utmTerm', 'utmContent', 'firstSeen'];
+const MAX_SOURCE_LEN = 500;
+
+function cleanSource(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const out = {};
+  for (const key of SOURCE_KEYS) {
+    const v = raw[key];
+    if (v === undefined || v === null) continue;
+    const s = String(v).trim().slice(0, MAX_SOURCE_LEN);
+    if (s) out[key] = s;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+module.exports = { saveSubmission, jsonResponse, handleSubmission, cleanSource };
