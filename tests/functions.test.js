@@ -357,3 +357,61 @@ test('empty optional fields are omitted from the email rather than shown blank',
   assert.ok(!/Phone:/.test(text), 'a null phone should not appear at all');
   assert.ok(!/null/.test(text), 'no raw nulls should leak into the email');
 });
+
+// ---- lead attribution ------------------------------------------------------
+
+test('attribution is stored alongside the lead and reaches the email', async () => {
+  reset();
+  const res = await enquiry.handler(makeEvent({
+    name: 'Rob', email: 'rob@example.com',
+    source: {
+      utmSource: 'google', utmMedium: 'cpc', utmCampaign: 'spring-clean',
+      landingPage: '/pricing', referrer: 'https://www.google.com/'
+    }
+  }));
+
+  assert.strictEqual(res.statusCode, 200);
+  const stored = calls.setJSON[0].value;
+  assert.strictEqual(stored.source.utmSource, 'google');
+  assert.strictEqual(stored.source.landingPage, '/pricing');
+  // and it must be legible in the notification, not "[object Object]"
+  const body = emails[0].body;
+  assert.ok(!/\[object Object\]/.test(body.html), 'source must be formatted, not stringified');
+  assert.match(body.html, /google \/ cpc/);
+  assert.match(body.html, /spring-clean/);
+});
+
+test('a missing source never blocks a lead', async () => {
+  reset();
+  const res = await enquiry.handler(makeEvent({ name: 'Rob', email: 'rob@example.com' }));
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(calls.setJSON[0].value.source, null);
+});
+
+test('hostile or junk source values are rejected, not stored', async () => {
+  reset();
+  const { cleanSource } = require(path.join(FN_DIR, '_lib', 'store.js'));
+
+  // unknown keys dropped
+  assert.deepStrictEqual(cleanSource({ evil: 'x', utmSource: 'fb' }), { utmSource: 'fb' });
+  // non-objects rejected
+  assert.strictEqual(cleanSource('utmSource=fb'), null);
+  assert.strictEqual(cleanSource(['a']), null);
+  assert.strictEqual(cleanSource(null), null);
+  // empty object -> null rather than an empty record field
+  assert.strictEqual(cleanSource({}), null);
+  // absurd lengths are capped
+  const long = cleanSource({ referrer: 'x'.repeat(5000) });
+  assert.strictEqual(long.referrer.length, 500);
+});
+
+test('a form field cannot overwrite the attribution object', async () => {
+  reset();
+  // "source" arriving as a plain string (e.g. a stray form input) must not
+  // end up masquerading as attribution data.
+  const res = await enquiry.handler(makeEvent({
+    name: 'Rob', email: 'rob@example.com', source: 'not-an-object'
+  }));
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(calls.setJSON[0].value.source, null);
+});
