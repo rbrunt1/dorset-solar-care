@@ -20,7 +20,7 @@
 const PLAN_INFO = {
   essential: { name: 'Essential', price: '£12.99/month', cadence: 'Annual clean' },
   standard:  { name: 'Standard',  price: '£19.99/month', cadence: 'Biannual clean + minor repairs' },
-  premium:   { name: 'Premium',   price: '£29.99/month', cadence: 'Quarterly clean + priority booking' }
+  premium:   { name: 'Premium',   price: '£29.99/month', cadence: 'Biannual clean + unlimited callouts' }
 };
 
 const state = {
