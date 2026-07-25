@@ -1,6 +1,6 @@
-# Dorset Solar Care — Website + Backend
+# SolarMOT — Website + Backend
 
-Marketing + lead-capture + booking + subscription sign-up site for a UK solar panel maintenance subscription business, with a Netlify Functions backend. Deploys as a Netlify site connected to this GitHub repo — push to `main` and Netlify rebuilds automatically.
+Marketing + lead-capture + booking + subscription sign-up site for **SolarMOT**, a UK solar panel maintenance subscription business ("an MOT for your solar panels"), with a Netlify Functions backend. Deploys as a Netlify site connected to this GitHub repo — push to `main` and Netlify rebuilds automatically.
 
 ## Pages
 
@@ -28,7 +28,23 @@ Shared front-end assets: `css/styles.css` (design system), `js/main.js` (nav + `
 
 `/api/*` is redirected to `/.netlify/functions/*` via `netlify.toml`. Submissions are stored with **Netlify Blobs** (`netlify/functions/_lib/store.js`) — a zero-setup key/value store scoped to the site, so there's no separate database to provision for a v1 launch.
 
-If a function isn't deployed/reachable (e.g. you're just opening the HTML files locally), every form and the GoCardless step automatically falls back to a simulated "demo mode" success so the site still works end-to-end for a walkthrough.
+### Gotcha: `connectLambda()` is required
+
+These functions use the Lambda-compatible signature (`exports.handler = async (event) => ...`). **In that mode Netlify does not auto-configure the Blobs environment**, so calling `getStore()` on its own throws `MissingBlobsEnvironmentError` in production. Netlify injects the credentials on `event.blobs`, and `connectLambda(event)` reads them — it must be called inside the handler, immediately before `getStore()`.
+
+This is easy to miss because **it works fine under `netlify dev`** and only fails once deployed. `npm test` has a dedicated test asserting `connectLambda` is called, so the bug can't come back silently.
+
+### Failure behaviour
+
+A storage failure returns **500, never 200**. The front end (`submitForm()` in `js/main.js`) treats that as a failure and shows the visitor an error with an email/phone fallback, rather than a success screen for a lead that was never saved. Submissions are also `console.log`ged before the write is attempted, so if a write does fail the lead is still recoverable from the function logs in the Netlify dashboard.
+
+The signup flow does the same but more carefully: by the final step the customer may already have authorised a real Direct Debit mandate, so a failed booking write doesn't block them — they reach the confirmation screen, but it states plainly that the visit slot wasn't recorded and how to get it booked.
+
+## Tests
+
+`npm test` runs `node --test` against `tests/functions.test.js`. The tests live outside `netlify/functions/` deliberately, so Netlify cannot mistake them for a deployable function. It stubs out `@netlify/blobs`, so it needs no Netlify account and no network. Covers: `connectLambda` being called with the event, storage failures returning 500, field validation and whitespace-only values, method and JSON-body rejection, and the stored shape of each of the four form types.
+
+If you open the HTML files directly from disk (`file://`), forms fall back to a simulated success so the flow can still be walked through with no backend. That fallback is **deliberately limited to `file://`** — on a real http(s) origin a failure always surfaces as a visible error, never a fake success.
 
 ### Making GoCardless live
 
@@ -40,16 +56,30 @@ If a function isn't deployed/reachable (e.g. you're just opening the HTML files 
 Without `GOCARDLESS_ACCESS_TOKEN` set, the function returns `{ mock: true }` and the sign-up flow shows a clearly labelled demo banner instead of redirecting to a real bank authorisation page.
 
 **Still needed for a real launch (not implemented here):**
+- **Lead notifications.** Nothing emails you when a form comes in — submissions sit in the Blobs store until someone looks. This is the most important gap for a real launch; wire up Resend/Postmark or a CRM.
 - A GoCardless **webhook** endpoint to confirm mandate status server-side before marking a subscription active — the redirect back from GoCardless shouldn't be trusted alone.
 - Creating the actual `Subscription` (recurring `Payments`) via the GoCardless API once the mandate is confirmed, matching the chosen plan's price.
 - Real technician-availability data behind `js/booking.js` (it currently generates plausible-looking slots client-side) and a `GET /api/availability` endpoint to back it.
 - A postcode lookup/validation API (e.g. postcodes.io) behind `service-area.html`, replacing the current hardcoded prefix list (`DT`/`BH` = live).
-- Outbound notifications (email/SMS/CRM) when a lead, quote, or booking comes in — the functions currently just persist to Netlify Blobs.
 - Legal pages: privacy policy, terms, and the GoCardless-required Direct Debit Guarantee text, before accepting real payments.
+
+## Domains
+
+- **solarmot.co.uk** — canonical live site (Netlify ALIAS → `apex-loadbalancer.netlify.com`, `www` CNAME → the Netlify subdomain).
+- **solarmot.com** — 301 URL-redirects (both apex and `www`) to `solarmot.co.uk`, to avoid splitting SEO across two domains.
 
 ## Design
 
-Green/blue palette (energy + trust), generous whitespace, system-font stack for fast/reliable rendering with no external font dependency, inline SVG illustrations/icons. Fully responsive down to mobile with a collapsing nav.
+**Brand idea:** the site leans on the MOT metaphor — a documented, qualified, once-a-year-minimum inspection with a clear pass. The homepage hero centrepiece is a styled "Solar MOT report" card, and the inspection checklist is treated as a first-class piece of content. A visible disclaimer states that "MOT" is descriptive shorthand and not a statutory test, alongside the existing not-an-MCS-installer disclaimer.
+
+**System:** deep forest-green/teal base for hero, dark bands and footer; a single action green; solar amber reserved as a sparing accent (the wordmark's "MOT", the sun glow, the pass stamp, primary CTAs on dark). Warm-tinted neutrals rather than cool greys. Plus Jakarta Sans for display, Inter for body, both loaded from Google Fonts with a full system-font fallback stack, so the site still renders correctly if fonts are blocked or slow.
+
+**Motion:** a sticky header that gains a border and shadow on scroll, and staggered scroll-reveal on card grids. Two deliberate robustness choices here:
+
+1. Reveal styles are gated behind a `.js` class set on `<html>` by an inline script, so content is **visible by default** and never stranded at `opacity: 0` if JavaScript fails.
+2. Reveals are driven by a rAF-throttled scroll-position check rather than `IntersectionObserver`, because an observer can miss elements during a fast scroll or anchor jump and leave them permanently hidden.
+
+Everything honours `prefers-reduced-motion`. Fully responsive down to 390px with a collapsing nav; verified with headless Chromium at 1440px and 390px for horizontal overflow and stuck-hidden elements.
 
 ## Local development
 

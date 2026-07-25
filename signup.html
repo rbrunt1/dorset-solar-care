@@ -3,19 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign Up | Dorset Solar Care</title>
-<meta name="description" content="Choose your plan, set up Direct Debit via GoCardless, and book your first solar panel clean and inspection.">
+<title>Sign Up | SolarMOT</title>
+<meta name="description" content="Set up your Solar MOT in about three minutes: choose a plan, set up Direct Debit via GoCardless, and book your first clean and inspection.">
+<meta name="theme-color" content="#06201A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400..650&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
 
 <header class="site-header">
   <nav class="nav">
     <a href="index.html" class="brand">
-      <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-      Dorset Solar Care
+      <span class="brand-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.3" stroke="white" stroke-width="1.9"/><path d="M12 2.2v2.6M12 19.2v2.6M2.2 12h2.6M19.2 12h2.6M5.1 5.1l1.9 1.9M17 17l1.9 1.9M5.1 18.9L7 17M17 7l1.9-1.9" stroke="white" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </span>
+      Solar<span class="mot">MOT</span>
     </a>
-    <button class="nav-toggle" aria-label="Toggle menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#0f4c3a" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#0B3A2E" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="pricing.html">Pricing</a></li>
@@ -24,8 +33,8 @@
       <li><a href="contact.html">Contact</a></li>
     </ul>
     <div class="nav-cta">
-      <a href="contact.html" class="btn btn-secondary btn-sm">Get a Quote</a>
-      <a href="pricing.html" class="btn btn-primary btn-sm">Subscribe</a>
+      <a href="contact.html" class="btn btn-secondary btn-sm">Get a quote</a>
+      <a href="pricing.html" class="btn btn-primary btn-sm">Book an MOT</a>
     </div>
   </nav>
 </header>
@@ -33,8 +42,8 @@
 <div class="page-header">
   <div class="wrap center">
     <span class="eyebrow">Sign up</span>
-    <h1>Get your subscription set up</h1>
-    <p class="lede">Four quick steps: confirm your plan, add your details, set up Direct Debit, and book your first visit.</p>
+    <h1>Set up your Solar MOT</h1>
+    <p class="lede">Four quick steps: confirm your plan, add your details, set up Direct Debit, and book your first inspection. Takes about three minutes.</p>
   </div>
 </div>
 
@@ -45,7 +54,7 @@
       <li class="current" data-step="plan">1. Plan</li>
       <li data-step="details">2. Your details</li>
       <li data-step="payment">3. Direct Debit</li>
-      <li data-step="booking">4. First visit</li>
+      <li data-step="booking">4. First MOT</li>
       <li data-step="done">5. Done</li>
     </ul>
 
@@ -131,29 +140,25 @@
 
         <div id="gc-done" style="display:none; margin-top:26px;">
           <div class="result-banner show in-area" id="gc-done-banner">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#146c4e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span id="gc-done-text">Direct Debit mandate authorised</span>
           </div>
         </div>
 
         <div id="gc-error" style="display:none; margin-top:26px;">
           <div class="result-banner show out-area">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#b8791f" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
             <span id="gc-error-text">Something went wrong contacting GoCardless.</span>
           </div>
         </div>
 
         <div class="integration-note" id="gc-integration-note">
-          <span>⚠️</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3.5v6C20 17 16.5 20.5 12 22 7.5 20.5 4 17 4 11.5v-6L12 2z" stroke="currentColor" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span>
-            This calls a real <code>/api/gocardless-create-billing-request</code> Netlify Function, which
-            follows GoCardless's Billing Requests flow: create a <code>Billing Request</code> with a
-            <code>mandate_request</code> (scheme <code>bacs</code>, GBP), create a <code>Billing Request Flow</code>
-            with prefilled customer details, then redirect to the returned <code>authorisation_url</code> to
-            complete bank authorisation. It only goes live once <code>GOCARDLESS_ACCESS_TOKEN</code> is set as a
-            Netlify environment variable — until then, or if the backend isn't deployed, it runs in demo mode.
-            A production build should also confirm the mandate via a GoCardless webhook before activating the
-            subscription, rather than trusting the redirect alone.
+            <strong>The Direct Debit Guarantee.</strong> Your Direct Debit is protected by the Direct Debit Guarantee.
+            We'll tell you at least 3 working days in advance of any change to the amount, date or frequency.
+            If an error is made by us or your bank, you're entitled to a full and immediate refund from your bank.
+            You can cancel at any time by contacting your bank &mdash; please tell us too.
           </span>
         </div>
 
@@ -167,8 +172,8 @@
     <!-- STEP 4: BOOKING -->
     <div class="step-panel" data-panel="booking">
       <div class="form-card">
-        <h3>Book your first visit</h3>
-        <p class="text-muted">Choose a preferred date and time slot for your first clean &amp; inspection. We'll confirm by email/SMS.</p>
+        <h3>Book your first MOT</h3>
+        <p class="text-muted">Choose a preferred date and time slot for your first clean and full inspection.</p>
         <div class="booking-widget" id="booking-widget">
           <div>
             <div class="date-picker"></div>
@@ -179,8 +184,8 @@
           </div>
         </div>
         <div class="integration-note">
-          <span>⚠️</span>
-          <span><strong>Backend wiring needed:</strong> slots shown here are generated client-side for demo purposes. A live version would pull real technician availability from a scheduling backend and confirm the booking via a <code>POST /api/bookings</code> call.</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span><strong>These slots are a preference, not a fixed booking.</strong> We'll confirm your exact appointment time by email or text once we've checked technician availability in your area &mdash; usually within one working day.</span>
         </div>
         <div style="display:flex; justify-content:space-between; margin-top:20px;">
           <button type="button" class="btn btn-secondary" data-back="payment">Back</button>
@@ -192,11 +197,23 @@
     <!-- STEP 5: DONE -->
     <div class="step-panel" data-panel="done">
       <div class="form-card center">
-        <div class="check-circle" style="margin:0 auto 20px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1a8a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <h3>You're all set!</h3>
-        <p>Your subscription and first appointment are confirmed below. A confirmation email is on its way (in a live build).</p>
+        <div class="check-circle" style="margin:0 auto 20px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3 id="done-heading">You're all set!</h3>
+        <p id="done-blurb">Your plan is set up. We'll confirm your first appointment time by email shortly.</p>
         <div class="summary-box" id="final-summary" style="text-align:left;"></div>
-        <a href="index.html" class="btn btn-secondary">Back to home</a>
+
+        <!-- Shown only if we could not record the requested visit. By this point
+             the customer's Direct Debit mandate may already be live, so we let
+             them finish, but we must not imply the appointment is booked. -->
+        <div class="form-error" id="booking-save-warning" style="display:none; text-align:left;" role="alert">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5v5M12 16.2h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span><strong>We couldn't save your requested visit slot.</strong><br>
+          Your plan and Direct Debit are set up correctly, but the appointment request didn't reach us.
+          Please email <a href="mailto:hello@solarmot.co.uk">hello@solarmot.co.uk</a> or call
+          <a href="tel:+441202000000">01202 000 000</a> with your preferred date and we'll book it in.</span>
+        </div>
+
+        <a href="index.html" class="btn btn-secondary" style="margin-top:22px;">Back to home</a>
       </div>
     </div>
 
@@ -207,11 +224,11 @@
   <div class="wrap">
     <div class="footer-grid">
       <div class="footer-brand">
-        <a href="index.html" class="brand" style="color:#fff;">
-          <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8"/></svg></span>
-          Dorset Solar Care
+        <a href="index.html" class="brand">
+          <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.3" stroke="white" stroke-width="1.9"/><path d="M12 2.2v2.6M12 19.2v2.6M2.2 12h2.6M19.2 12h2.6" stroke="white" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+          Solar<span class="mot">MOT</span>
         </a>
-        <p>Subscription-based solar panel cleaning, inspection and minor repairs for homes and businesses. Currently serving Dorset, England.</p>
+        <p>Subscription solar panel cleaning, inspection and minor repairs for homes and businesses. Currently booking in Dorset, expanding across the South West.</p>
       </div>
       <div>
         <h4>Company</h4>
@@ -224,23 +241,23 @@
       <div>
         <h4>Plans</h4>
         <ul>
-          <li><a href="pricing.html">Residential Plans</a></li>
-          <li><a href="pricing.html#commercial">Commercial Enquiry</a></li>
-          <li><a href="signup.html?plan=essential">Sign Up</a></li>
+          <li><a href="pricing.html">Residential plans</a></li>
+          <li><a href="pricing.html#commercial">Commercial enquiry</a></li>
+          <li><a href="booking.html">Book a visit</a></li>
         </ul>
       </div>
       <div>
         <h4>Get in touch</h4>
         <ul>
-          <li><a href="mailto:hello@dorsetsolarcare.co.uk">hello@dorsetsolarcare.co.uk</a></li>
+          <li><a href="mailto:hello@solarmot.co.uk">hello@solarmot.co.uk</a></li>
           <li><a href="tel:+441202000000">01202 000 000</a></li>
           <li>Dorset, England</li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© <span data-year></span> Dorset Solar Care Ltd. Registered in England &amp; Wales. Maintenance &amp; cleaning services only &mdash; not an MCS-certified installer.</span>
-      <span>Direct Debit collection powered by GoCardless.</span>
+      <span>&copy; <span data-year></span> SolarMOT Ltd. Registered in England &amp; Wales. Maintenance &amp; cleaning services only &mdash; not an MCS-certified installer. "MOT" is used descriptively and does not refer to any statutory test.</span>
+      <span>Direct Debit powered by GoCardless.</span>
     </div>
   </div>
 </footer>
