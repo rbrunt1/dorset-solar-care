@@ -92,6 +92,56 @@ const CONTACT_EMAIL = 'hello@solarmot.co.uk';
 const CONTACT_PHONE = '07891 110865';
 
 /**
+ * Where did this visitor come from?
+ *
+ * Captured on the FIRST page they land on and kept for the session, because
+ * by the time they reach the contact form document.referrer just says
+ * "solarmot.co.uk" and the ?utm_ tags are long gone from the URL. Without
+ * this, every lead looks like it came from nowhere.
+ *
+ * sessionStorage rather than a cookie on purpose: it is first-party, expires
+ * with the tab, and stores no identifier, so it doesn't drag the site into
+ * cookie-consent territory for what is really just "which advert worked".
+ */
+const SOURCE_KEY = 'solarmot:source';
+
+function captureLeadSource() {
+  try {
+    if (sessionStorage.getItem(SOURCE_KEY)) return; // first touch wins
+    const p = new URLSearchParams(window.location.search);
+    const ref = document.referrer || '';
+    // Ignore internal referrers: arriving at /pricing from /index is not a source.
+    const external = ref && !ref.includes(window.location.host) ? ref : '';
+    const source = {
+      referrer: external || (ref ? '' : 'direct'),
+      landingPage: window.location.pathname + window.location.search,
+      utmSource: p.get('utm_source') || '',
+      utmMedium: p.get('utm_medium') || '',
+      utmCampaign: p.get('utm_campaign') || '',
+      utmTerm: p.get('utm_term') || '',
+      utmContent: p.get('utm_content') || '',
+      firstSeen: new Date().toISOString()
+    };
+    Object.keys(source).forEach(k => { if (!source[k]) delete source[k]; });
+    sessionStorage.setItem(SOURCE_KEY, JSON.stringify(source));
+  } catch {
+    /* private browsing can throw on sessionStorage — attribution is never
+       worth breaking a form over, so fail silently. */
+  }
+}
+
+function getLeadSource() {
+  try {
+    const raw = sessionStorage.getItem(SOURCE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+captureLeadSource();
+
+/**
  * Show an inline error inside a form, with a way for the visitor to reach us
  * anyway. Used when a submission genuinely failed to save — it is important
  * they find out, rather than being shown a success screen for a message that
@@ -157,6 +207,10 @@ async function submitForm(form, endpoint, onSuccess, extraFields = {}) {
   const payload = {};
   new FormData(form).forEach((value, key) => { payload[key] = value; });
   Object.assign(payload, extraFields);
+
+  // Attach attribution last so a form field can never overwrite it.
+  const source = getLeadSource();
+  if (source) payload.source = source;
 
   const isLocalPreview = window.location.protocol === 'file:';
   let ok = false;
