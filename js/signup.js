@@ -158,21 +158,42 @@ async function startGoCardlessMandate() {
     }
 
     if (result.mock) {
-      // Backend reachable, but no GOCARDLESS_ACCESS_TOKEN configured yet.
-      showGcResult('done', 'Direct Debit mandate authorised (demo — add GOCARDLESS_ACCESS_TOKEN in Netlify to go live).');
-      document.getElementById('to-booking').disabled = false;
+      // Backend reachable, but no GOCARDLESS_ACCESS_TOKEN configured, so NO
+      // mandate exists. Never tell the customer it was authorised: they would
+      // believe they are paying, we would never collect, and we would turn up
+      // to a visit nobody is being billed for. Fail visibly instead.
+      if (isLocalPreview()) {
+        showGcResult('done', 'Direct Debit step simulated — local preview only, no mandate was created.');
+        document.getElementById('to-booking').disabled = false;
+        return;
+      }
+      console.error('[signup] GoCardless is not configured — no mandate created.');
+      showGcResult('error', "We can't set up Direct Debits just yet. Nothing has been taken and no payment " +
+        'details were stored. Email hello@solarmot.co.uk or call 07891 110865 and we\'ll get you booked in directly.');
       return;
     }
 
     throw new Error('Unexpected response from GoCardless function.');
   } catch (err) {
-    // Backend not reachable at all (e.g. static/local preview) — fall back
-    // to a simulated success so the flow can still be demoed end to end.
-    console.warn('[demo mode] GoCardless backend not reachable, simulating success.', err);
-    await new Promise(r => setTimeout(r, 900));
-    showGcResult('done', 'Direct Debit mandate authorised (demo — backend not reachable).');
-    document.getElementById('to-booking').disabled = false;
+    // Only simulate on a raw file:// preview, where there is no backend by
+    // definition. On the real site a failure here must surface, for the same
+    // reason as above.
+    if (isLocalPreview()) {
+      console.warn('[local preview] GoCardless backend not reachable, simulating success.', err);
+      await new Promise(r => setTimeout(r, 900));
+      showGcResult('done', 'Direct Debit step simulated — local preview only, no mandate was created.');
+      document.getElementById('to-booking').disabled = false;
+      return;
+    }
+    console.error('[signup] GoCardless request failed', err);
+    showGcResult('error', "We couldn't reach our payment provider. Nothing has been taken. Please try again " +
+      "in a moment, or email hello@solarmot.co.uk and we'll set you up directly.");
   }
+}
+
+/** A raw file:// preview has no backend, so simulation there is honest. */
+function isLocalPreview() {
+  return window.location.protocol === 'file:';
 }
 
 /**
