@@ -593,7 +593,10 @@ section { padding: clamp(64px, 8vw, 104px) 0; }
 .plan-price .period { color: var(--ink-500); font-weight: 600; font-size: .95rem; }
 .plan-desc { color: var(--ink-500); font-size: .92rem; margin: 10px 0 24px; }
 .plan-cadence {
-  display: inline-flex; align-items: center; gap: 7px;
+  /* wrap rather than overflow: in the three-column range around 940-1100px
+     a card has only ~245px of content width, and a longer cadence label
+     ("2 visits + unlimited callouts") would otherwise spill out of the card. */
+  display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap;
   background: var(--ink-50); border: 1px solid var(--ink-100);
   color: var(--ink-700); font-size: .8rem; font-weight: 650;
   padding: 6px 12px; border-radius: var(--radius-pill); margin-bottom: 22px;
