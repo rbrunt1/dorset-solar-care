@@ -9,3 +9,8 @@
 
 [functions]
   node_bundler = "esbuild"
+
+# Weekly visit digest. Monday 07:00 UTC — before the working week starts, so the
+# list is in the inbox rather than waiting in a dashboard nobody opens.
+[functions."weekly-schedule"]
+  schedule = "0 7 * * 1"

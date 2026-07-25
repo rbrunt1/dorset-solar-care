@@ -46,3 +46,5 @@ Year 2: Hampshire, Somerset, Devon and the wider South Coast. Year 3+: England-w
 - Service area and postcode checker: https://solarmot.co.uk/service-area
 - About, insurance and qualifications: https://solarmot.co.uk/about
 - Contact: https://solarmot.co.uk/contact
+- Terms & Conditions: https://solarmot.co.uk/terms
+- Privacy Policy: https://solarmot.co.uk/privacy

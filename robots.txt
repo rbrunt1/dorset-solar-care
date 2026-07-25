@@ -2,6 +2,8 @@
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin.html
 
 # AI / answer-engine crawlers are allowed deliberately. For a business that wants
 # to be recommended when someone asks an assistant "who maintains solar panels in

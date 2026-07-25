@@ -12,7 +12,7 @@ Marketing + lead-capture + booking + subscription sign-up site for **SolarMOT**,
 | `signup.html` | Residential sign-up flow: **plan → your details → Direct Debit via GoCardless → book first visit → confirmation**. Plan can be pre-selected via `signup.html?plan=essential\|standard\|premium`. |
 | `booking.html` | Standalone appointment-request page (for existing subscribers or anyone who wants to pick a slot outside the sign-up flow). |
 | `service-area.html` | Postcode-prefix coverage checker (Dorset live now) + Year 2/Year 3 expansion roadmap. |
-| `about.html` | Ltd company, insurance, DBS checks, City & Guilds 2377 / 2922-34 certifications, explicit "not an MCS installer" disclaimer. |
+| `about.html` | Ltd company, insurance, City & Guilds 2377 / 2922-34 certifications, explicit "not an MCS installer" disclaimer. |
 
 Shared front-end assets: `css/styles.css` (design system), `js/main.js` (nav + `submitForm()` helper), `js/booking.js` (date/slot picker widget), `js/signup.js` (sign-up step logic + GoCardless call), `js/postcode-check.js` (coverage checker logic).
 

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | SolarMOT</title>
+<meta name="description" content="Internal dashboard.">
+<meta name="theme-color" content="#06201A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400..650&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="css/styles.css">
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="admin">
+
+<header class="admin-bar">
+  <div class="wrap admin-bar-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"><img src="assets/logo-icon.svg" width="30" height="30" alt="" aria-hidden="true"></span>
+      Solar<span class="mot">MOT</span>
+    </a>
+    <span class="admin-tag">Admin</span>
+    <div class="admin-bar-right">
+      <span id="admin-generated" class="text-muted text-xs"></span>
+      <button class="btn btn-secondary btn-sm" id="admin-refresh">Refresh</button>
+      <button class="btn btn-ghost btn-sm" id="admin-signout">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- Sign-in. The page ships with no data in it; everything comes from the
+     authenticated endpoint, so this gate is a convenience, not the security
+     boundary. The real boundary is ADMIN_TOKEN on the server. -->
+<section id="admin-gate" class="wrap wrap-narrow" style="padding:70px 24px;">
+  <div class="form-card">
+    <h2>Admin sign in</h2>
+    <p class="text-muted">Enter the admin token. It is stored for this browser tab only and never written to disk.</p>
+    <form id="admin-login">
+      <div class="field">
+        <label for="admin-token">Admin token</label>
+        <input type="password" id="admin-token" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    </form>
+    <div id="admin-login-error" class="form-error" style="display:none;"></div>
+  </div>
+</section>
+
+<main id="admin-app" hidden>
+  <section class="wrap" style="padding:30px 24px 0;">
+    <div class="admin-stats" id="admin-counts"></div>
+  </section>
+
+  <section class="wrap" style="padding:26px 24px;">
+    <div class="admin-tabs">
+      <button class="admin-tab is-active" data-tab="due">Visits due</button>
+      <button class="admin-tab" data-tab="leads">Leads</button>
+      <button class="admin-tab" data-tab="customers">Customers</button>
+    </div>
+
+    <!-- DUE -->
+    <div class="admin-panel is-active" data-panel="due">
+      <div class="table-scroll">
+        <table class="compare-table admin-table">
+          <thead><tr><th>Customer</th><th>Plan</th><th>Next due</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="due-rows"></tbody>
+        </table>
+      </div>
+      <p class="text-muted text-sm" id="due-empty" style="display:none;padding:18px 2px;">
+        Nothing due in the next 14 days.
+      </p>
+    </div>
+
+    <!-- LEADS -->
+    <div class="admin-panel" data-panel="leads">
+      <div class="table-scroll">
+        <table class="compare-table admin-table">
+          <thead><tr><th>Received</th><th>Name</th><th>Contact</th><th>Type</th><th>Came from</th><th>Status</th></tr></thead>
+          <tbody id="lead-rows"></tbody>
+        </table>
+      </div>
+      <p class="text-muted text-sm" id="leads-empty" style="display:none;padding:18px 2px;">No leads yet.</p>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="admin-panel" data-panel="customers">
+      <div class="form-card" style="margin-bottom:22px;">
+        <h3>Add a customer</h3>
+        <p class="text-muted text-sm">Until GoCardless is live, add subscribers here so the visit schedule tracks them.</p>
+        <form id="customer-form">
+          <div class="field-row">
+            <div class="field"><label for="c-name">Name</label><input type="text" id="c-name" required></div>
+            <div class="field"><label for="c-plan">Plan</label>
+              <select id="c-plan">
+                <option value="essential">Essential — 1 visit/yr</option>
+                <option value="standard" selected>Standard — 2 visits/yr</option>
+                <option value="premium">Premium — 2 visits/yr</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="c-email">Email</label><input type="email" id="c-email"></div>
+            <div class="field"><label for="c-phone">Phone</label><input type="tel" id="c-phone"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="c-postcode">Postcode</label><input type="text" id="c-postcode"></div>
+            <div class="field"><label for="c-start">Start date</label><input type="date" id="c-start"></div>
+          </div>
+          <button type="submit" class="btn btn-primary">Add customer</button>
+        </form>
+        <div id="customer-error" class="form-error" style="display:none;"></div>
+      </div>
+      <div class="table-scroll">
+        <table class="compare-table admin-table">
+          <thead><tr><th>Name</th><th>Plan</th><th>Started</th><th>Last visit</th><th>Next due</th><th>Visits</th></tr></thead>
+          <tbody id="customer-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="js/admin.js"></script>
+</body>
+</html>
