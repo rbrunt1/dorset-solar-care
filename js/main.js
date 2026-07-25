@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const CONTACT_EMAIL = 'hello@solarmot.co.uk';
-const CONTACT_PHONE = '01202 000 000';
+const CONTACT_PHONE = '07891 110865';
 
 /**
  * Show an inline error inside a form, with a way for the visitor to reach us
@@ -111,7 +111,7 @@ function showFormError(form, message) {
     `<path d="M12 7.5v5M12 16.2h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>` +
     `<span><strong>${message}</strong><br>Please try again in a moment. If it keeps failing, ` +
     `email us at <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a> or call ` +
-    `<a href="tel:+441202000000">${CONTACT_PHONE}</a> and we'll pick it up from there.</span>`;
+    `<a href="tel:+447891110865">${CONTACT_PHONE}</a> and we'll pick it up from there.</span>`;
   box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
