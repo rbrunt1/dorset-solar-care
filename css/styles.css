@@ -592,6 +592,13 @@ section { padding: clamp(64px, 8vw, 104px) 0; }
 }
 .plan-price .period { color: var(--ink-500); font-weight: 600; font-size: .95rem; }
 .plan-desc { color: var(--ink-500); font-size: .92rem; margin: 10px 0 24px; }
+.plan-setup {
+  font-size: .84rem; color: var(--ink-600); margin: -8px 0 14px;
+  line-height: 1.4;
+}
+.plan-setup strong { color: var(--ink-800); font-weight: 700; }
+.plan-card.featured .plan-setup strong { color: var(--green-700); }
+
 .plan-cadence {
   /* wrap rather than overflow: in the three-column range around 940-1100px
      a card has only ~245px of content width, and a longer cadence label
