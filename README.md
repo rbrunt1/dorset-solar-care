@@ -62,27 +62,36 @@ One environment variable, in **Netlify → Site configuration → Environment va
 
 `LEAD_NOTIFICATION_FROM` is currently `SolarMOT <onboarding@resend.dev>` — Resend's shared sandbox sender. **Two limitations while it stays that way:** it can only deliver to the Resend account's own address (robertbrunt@hotmail.co.uk), so extra recipients won't work, and the emails come from a `resend.dev` address rather than the brand.
 
-To switch to branded sending, `solarmot.co.uk` needs verifying in Resend. Three of the four DNS records are in place at Namecheap:
+To switch to branded sending, `solarmot.co.uk` needs verifying in Resend. All required records now exist at Namecheap:
 
 | Type | Host | Value | Status |
 |---|---|---|---|
 | TXT | `resend._domainkey` | DKIM public key | done |
 | TXT | `send` | `v=spf1 include:amazonses.com ~all` | done |
-| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` (priority 10) | **outstanding** |
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` (priority 10) | done |
 | TXT | `_dmarc` | `v=DMARC1; p=none;` | optional, not added |
 
-The MX record is outstanding because Namecheap doesn't offer MX in the Advanced DNS host-records dropdown — it lives under **Mail Settings**, which has to be switched from "Email Forwarding" to "Custom MX".
-
-Once that record exists and Resend shows the domain Verified, change `LEAD_NOTIFICATION_FROM` to `SolarMOT <notifications@solarmot.co.uk>` and redeploy.
+Once Resend shows the domain Verified, change `LEAD_NOTIFICATION_FROM` to `SolarMOT <notifications@solarmot.co.uk>` and redeploy.
 
 ### Incoming mail: hello@solarmot.co.uk
 
-The site advertises `hello@solarmot.co.uk`. It is now a **Namecheap email forwarder** (Domain tab → Redirect Email): `hello` → `robertbrunt@hotmail.co.uk`. Mail arrives in the existing Outlook inbox with nothing to configure in a mail client. MX for the domain is `eforward1–5.registrar-servers.com`.
+`hello@solarmot.co.uk` is a real mailbox on **Namecheap Private Email** (Launch plan, 5 GB). Not a forwarder — it sends as well as receives.
 
-Two consequences worth knowing:
+The DNS this depends on. Namecheap's **Mail Settings** is a single mode, so it is set to **Custom MX** rather than "Private Email": that mode auto-fills the two apex MX records but does not allow an MX on any other host, and Resend needs one on `send`. Custom MX takes arbitrary hosts, so both fit:
 
-1. **Forwarding is receive-only.** Replies go out as `robertbrunt@hotmail.co.uk`, not as the brand. Free Outlook.com accounts have not been able to add custom-domain aliases since Nov 2023, so "send as hello@" needs a real hosted mailbox (Namecheap Private Email, Microsoft 365 Business, iCloud+ Custom Email Domain, …).
-2. **Forwarding and the Resend MX record are mutually exclusive at Namecheap**, because Mail Settings is a single mode: "Email Forwarding" *or* "Custom MX". Buying any hosted mailbox resolves both at once — it moves the domain to Custom MX, where the apex MX points at the mailbox provider *and* the `send` MX for Resend can be added alongside it.
+| Type | Host | Value | Priority |
+|---|---|---|---|
+| MX | `@` | `mx1.privateemail.com` | 10 |
+| MX | `@` | `mx2.privateemail.com` | 10 |
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` | 10 |
+| TXT | `@` | `v=spf1 include:spf.privateemail.com ~all` | — |
+| TXT | `privateemail._domainkey` | DKIM public key | — |
+
+If Mail Settings is ever switched back to "Private Email" or "Email Forwarding", the `send` MX disappears and Resend silently un-verifies. Leave it on Custom MX.
+
+The earlier free forwarder (`hello` → `robertbrunt@hotmail.co.uk`, under Domain tab → Redirect Email) is now inert, since the apex MX no longer points at `eforward*.registrar-servers.com`.
+
+To add the mailbox to a mail client: server `mail.privateemail.com` for both directions, IMAP 993 (SSL) or 143 (STARTTLS), SMTP 465 (SSL) or 587 (STARTTLS), username is the full address, SMTP authentication on, SPA off.
 
 **Without `RESEND_API_KEY` the notifier cleanly no-ops** — it logs that it skipped and the submission still succeeds. Nothing breaks before the key exists.
 
