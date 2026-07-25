@@ -1,0 +1,30 @@
+# SolarMOT — https://solarmot.co.uk
+
+User-agent: *
+Allow: /
+
+# AI / answer-engine crawlers are allowed deliberately. For a business that wants
+# to be recommended when someone asks an assistant "who maintains solar panels in
+# Dorset", being crawlable by these is the whole point. Remove any you object to.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://solarmot.co.uk/sitemap.xml

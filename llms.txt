@@ -1,0 +1,48 @@
+# SolarMOT
+
+> Subscription solar panel maintenance for homes and businesses in Dorset, England.
+> Cleaning, a documented safety and performance inspection, and minor repairs —
+> scheduled automatically and paid monthly by Direct Debit.
+
+SolarMOT maintains solar photovoltaic systems that other companies installed. It is
+not an MCS-certified installer and does not sell or fit solar panels. "MOT" is used
+descriptively, by analogy with a vehicle MOT; it is not a statutory test.
+
+## Services
+
+- Solar panel cleaning (1 or 2 scheduled visits a year depending on plan)
+- Documented inspection: mounting and fixings, cabling and connectors, isolators,
+  seals and weatherproofing, inverter and error codes, output reading
+- Written report after every visit
+- Minor repairs (fixings, seals, connectors) included on Standard and Premium
+- Initial baseline survey for every new customer, since systems were installed by others
+
+## Plans (residential, GBP, billed monthly by Direct Debit)
+
+- Essential — 19.99/month, 1 visit a year, no minimum term, plus a 149 one-off initial survey
+- Standard — 29.99/month, 2 visits a year, minor repairs included, plus a 75 one-off initial survey
+- Premium — 39.99/month, 2 visits a year, 2 priority callouts, 48-hour response,
+  output monitoring, 20% off larger repairs, initial survey included free
+
+Commercial: 4–15 GBP per kWp per year, minimum contract 750 GBP/year.
+Systems under roughly 20 kWp are usually better served by a residential plan.
+
+## Coverage
+
+Currently Dorset (DT and BH postcodes): Bournemouth, Poole, Christchurch, Dorchester,
+Weymouth, Wimborne, Ringwood, Blandford Forum, Sherborne, Bridport, Swanage, Wareham.
+Year 2: Hampshire, Somerset, Devon and the wider South Coast. Year 3+: England-wide.
+
+## Contact
+
+- Website: https://solarmot.co.uk
+- Email: hello@solarmot.co.uk
+- Phone: 07891 110865
+- Hours: Monday to Friday, 08:00–18:00
+
+## Key pages
+
+- Pricing: https://solarmot.co.uk/pricing
+- Service area and postcode checker: https://solarmot.co.uk/service-area
+- About, insurance and qualifications: https://solarmot.co.uk/about
+- Contact: https://solarmot.co.uk/contact
