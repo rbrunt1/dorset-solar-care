@@ -17,11 +17,18 @@
  *   and a confirmation email/SMS triggered.
  */
 
+// `survey` is the one-off initial Solar MOT on a system we didn't install —
+// which is everyone, since we're a maintenance provider rather than an
+// installer. It must be shown before the Direct Debit step, not after: a
+// mandatory up-front charge that only appears at checkout is both bad
+// practice and a consumer-transparency problem.
 const PLAN_INFO = {
-  essential: { name: 'Essential', price: '£12.99/month', cadence: 'Annual clean' },
-  standard:  { name: 'Standard',  price: '£19.99/month', cadence: 'Biannual clean + minor repairs' },
-  premium:   { name: 'Premium',   price: '£29.99/month', cadence: 'Biannual clean + unlimited callouts' }
+  essential: { name: 'Essential', price: '£19.99/month', cadence: 'Annual clean', survey: 149 },
+  standard:  { name: 'Standard',  price: '£29.99/month', cadence: 'Biannual clean + minor repairs', survey: 75 },
+  premium:   { name: 'Premium',   price: '£39.99/month', cadence: 'Biannual clean + unlimited callouts', survey: 0 }
 };
+
+const formatSurvey = (n) => (n === 0 ? 'Included free' : `£${n} one-off`);
 
 const state = {
   plan: null,
@@ -256,6 +263,7 @@ function renderPaymentSummary() {
     <div class="summary-row"><span>Plan</span><span>${info.name}</span></div>
     <div class="summary-row"><span>Includes</span><span>${info.cadence}</span></div>
     <div class="summary-row"><span>Billed to</span><span>${state.details.firstName} ${state.details.lastName}</span></div>
+    <div class="summary-row"><span>Initial Solar MOT survey</span><span>${formatSurvey(info.survey)}</span></div>
     <div class="summary-row"><span>Monthly amount</span><span>${info.price}</span></div>
   `;
 }
