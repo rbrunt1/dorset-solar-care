@@ -56,7 +56,33 @@ One environment variable, in **Netlify → Site configuration → Environment va
 | `LEAD_NOTIFICATION_TO` | no | Comma-separated recipients. Defaults to `robertbrunt@hotmail.co.uk`. |
 | `LEAD_NOTIFICATION_FROM` | no | Must be on a domain verified in Resend. Defaults to `SolarMOT <notifications@solarmot.co.uk>`. |
 
-Sending from `@solarmot.co.uk` requires verifying the domain in Resend, which means adding the DKIM/SPF records it gives you at Namecheap. Until that's done, either use a Resend-provided sender or expect deliverability to suffer.
+### Current live configuration
+
+`RESEND_API_KEY` and `LEAD_NOTIFICATION_FROM` are both set in Netlify. Notifications are working and verified delivered.
+
+`LEAD_NOTIFICATION_FROM` is currently `SolarMOT <onboarding@resend.dev>` — Resend's shared sandbox sender. **Two limitations while it stays that way:** it can only deliver to the Resend account's own address (robertbrunt@hotmail.co.uk), so extra recipients won't work, and the emails come from a `resend.dev` address rather than the brand.
+
+To switch to branded sending, `solarmot.co.uk` needs verifying in Resend. Three of the four DNS records are in place at Namecheap:
+
+| Type | Host | Value | Status |
+|---|---|---|---|
+| TXT | `resend._domainkey` | DKIM public key | done |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` | done |
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` (priority 10) | **outstanding** |
+| TXT | `_dmarc` | `v=DMARC1; p=none;` | optional, not added |
+
+The MX record is outstanding because Namecheap doesn't offer MX in the Advanced DNS host-records dropdown — it lives under **Mail Settings**, which has to be switched from "Email Forwarding" to "Custom MX".
+
+Once that record exists and Resend shows the domain Verified, change `LEAD_NOTIFICATION_FROM` to `SolarMOT <notifications@solarmot.co.uk>` and redeploy.
+
+### Incoming mail: hello@solarmot.co.uk
+
+The site advertises `hello@solarmot.co.uk`. It is now a **Namecheap email forwarder** (Domain tab → Redirect Email): `hello` → `robertbrunt@hotmail.co.uk`. Mail arrives in the existing Outlook inbox with nothing to configure in a mail client. MX for the domain is `eforward1–5.registrar-servers.com`.
+
+Two consequences worth knowing:
+
+1. **Forwarding is receive-only.** Replies go out as `robertbrunt@hotmail.co.uk`, not as the brand. Free Outlook.com accounts have not been able to add custom-domain aliases since Nov 2023, so "send as hello@" needs a real hosted mailbox (Namecheap Private Email, Microsoft 365 Business, iCloud+ Custom Email Domain, …).
+2. **Forwarding and the Resend MX record are mutually exclusive at Namecheap**, because Mail Settings is a single mode: "Email Forwarding" *or* "Custom MX". Buying any hosted mailbox resolves both at once — it moves the domain to Custom MX, where the apex MX points at the mailbox provider *and* the `send` MX for Resend can be added alongside it.
 
 **Without `RESEND_API_KEY` the notifier cleanly no-ops** — it logs that it skipped and the submission still succeeds. Nothing breaks before the key exists.
 
