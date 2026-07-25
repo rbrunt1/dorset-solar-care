@@ -1,0 +1,14 @@
+{
+  "name": "SolarMOT",
+  "short_name": "SolarMOT",
+  "description": "An MOT for your solar panels. Clean, inspection and minor repairs on a simple monthly subscription.",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/logo-icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "theme_color": "#06201A",
+  "background_color": "#ffffff",
+  "display": "browser",
+  "start_url": "/"
+}
