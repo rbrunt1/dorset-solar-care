@@ -94,9 +94,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('to-done').disabled = false;
   });
 
-  document.getElementById('to-done').addEventListener('click', async () => {
-    await submitFinalBooking();
-    renderFinalSummary();
+  document.getElementById('to-done').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Finishing…';
+    const saved = await submitFinalBooking();
+    btn.disabled = false;
+    btn.textContent = original;
+    renderFinalSummary(saved);
     goToStep('done');
   });
 
@@ -169,8 +175,17 @@ async function startGoCardlessMandate() {
   }
 }
 
+/**
+ * Record the requested first visit.
+ *
+ * Returns whether it was actually saved. This matters: by this point the
+ * customer may already have authorised a real Direct Debit mandate, so we
+ * can't just block them — but we also must not tell them their appointment is
+ * confirmed if we failed to record it. The caller shows a clear warning on the
+ * confirmation screen when this returns false.
+ */
 async function submitFinalBooking() {
-  if (!state.booking) return;
+  if (!state.booking) return false;
   const payload = {
     name: `${state.details.firstName} ${state.details.lastName}`.trim(),
     email: state.details.email,
@@ -180,17 +195,28 @@ async function submitFinalBooking() {
     date: state.booking.date.toISOString(),
     slot: state.booking.slot.label
   };
+
+  let saved = false;
   try {
     const res = await fetch('/api/submit-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+    saved = res.ok;
+    if (!res.ok) console.error(`[submit-booking] failed with ${res.status}`);
   } catch (err) {
-    console.warn('[demo mode] Could not store booking, continuing anyway.', err);
+    if (window.location.protocol === 'file:') {
+      // Local preview of the raw HTML — there is no backend to talk to.
+      console.warn('[local preview] no backend for /api/submit-booking; treating as saved.');
+      saved = true;
+    } else {
+      console.error('[submit-booking] network error', err);
+    }
   }
+
   sessionStorage.removeItem(SESSION_KEY);
+  return saved;
 }
 
 function selectPlan(planKey) {
@@ -213,7 +239,12 @@ function renderPaymentSummary() {
   `;
 }
 
-function renderFinalSummary() {
+/**
+ * @param {boolean} bookingSaved whether the requested visit was actually
+ *        recorded. If it wasn't, say so plainly rather than showing a
+ *        confirmation for an appointment that doesn't exist on our side.
+ */
+function renderFinalSummary(bookingSaved = true) {
   const info = PLAN_INFO[state.plan];
   const b = state.booking;
   const dateStr = b ? b.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : '—';
@@ -221,9 +252,22 @@ function renderFinalSummary() {
     <div class="summary-row"><span>Plan</span><span>${info.name} — ${info.price}</span></div>
     <div class="summary-row"><span>Customer</span><span>${state.details.firstName} ${state.details.lastName}</span></div>
     <div class="summary-row"><span>Address</span><span>${state.details.address1}, ${state.details.city} ${state.details.postcode}</span></div>
-    <div class="summary-row"><span>Direct Debit</span><span>Mandate authorised (demo)</span></div>
-    <div class="summary-row"><span>First visit</span><span>${dateStr}, ${b ? b.slot.label : '—'}</span></div>
+    <div class="summary-row"><span>Requested first visit</span><span>${dateStr}, ${b ? b.slot.label : '—'}</span></div>
   `;
+
+  const warn = document.getElementById('booking-save-warning');
+  if (warn) warn.style.display = bookingSaved ? 'none' : 'flex';
+  const heading = document.getElementById('done-heading');
+  const blurb = document.getElementById('done-blurb');
+  if (heading && blurb) {
+    if (bookingSaved) {
+      heading.textContent = "You're all set!";
+      blurb.textContent = "Your plan is set up. We'll confirm your first appointment time by email shortly.";
+    } else {
+      heading.textContent = 'Your plan is set up';
+      blurb.textContent = 'There was one problem, explained below — please read it before you go.';
+    }
+  }
 }
 
 function goToStep(stepName) {
