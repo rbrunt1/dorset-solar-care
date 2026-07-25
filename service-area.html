@@ -39,7 +39,7 @@
 </div>
 
 <!-- ============ POSTCODE CHECKER ============ -->
-<section>
+<section id="postcode-checker">
   <div class="wrap center" style="max-width:620px;">
     <h2>Check your postcode</h2>
     <p>Enter your postcode to see if you're in our current coverage area.</p>
@@ -48,6 +48,32 @@
       <button type="submit" class="btn btn-primary">Check</button>
     </form>
     <div class="result-banner" id="postcode-result"></div>
+
+    <div class="card" id="interest-capture" style="display:none; margin-top:22px; text-align:left;">
+      <h3 style="margin-bottom:4px;">Register your interest</h3>
+      <p class="text-muted" style="margin-bottom:18px;">Leave your email and we'll let you know the moment we cover your postcode &mdash; no spam, just one email when it happens.</p>
+      <form id="interest-form">
+        <input type="hidden" name="postcode" id="interest-postcode">
+        <input type="hidden" name="coverageStatus" id="interest-status">
+        <div class="field-row">
+          <div class="field">
+            <label for="int-name">Name (optional)</label>
+            <input type="text" id="int-name" name="name">
+          </div>
+          <div class="field">
+            <label for="int-email">Email</label>
+            <input type="email" id="int-email" name="email" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Notify me when you're in my area</button>
+      </form>
+      <div id="interest-success" style="display:none; text-align:center; padding:12px 0;">
+        <div class="check-circle" style="margin:0 auto 12px; width:52px; height:52px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1a8a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="mb-0">Thanks &mdash; we'll email you as soon as we reach your area.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -76,7 +102,7 @@
       </div>
     </div>
     <div class="center" style="margin-top:36px;">
-      <p class="text-muted">Outside Dorset for now? <a href="contact.html">Register your interest</a> and we'll let you know as soon as we're in your area.</p>
+      <p class="text-muted">Outside Dorset for now? <a href="#postcode-checker">Check your postcode above</a> to register your interest and we'll let you know as soon as we're in your area.</p>
     </div>
   </div>
 </section>

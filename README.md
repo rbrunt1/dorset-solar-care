@@ -23,6 +23,7 @@ Shared front-end assets: `css/styles.css` (design system), `js/main.js` (nav + `
 | `netlify/functions/submit-enquiry.js` | `POST /api/submit-enquiry` | Stores contact-page leads. |
 | `netlify/functions/submit-quote.js` | `POST /api/submit-quote` | Stores commercial quote requests. |
 | `netlify/functions/submit-booking.js` | `POST /api/submit-booking` | Stores requested appointment slots. |
+| `netlify/functions/register-interest.js` | `POST /api/register-interest` | Stores "notify me" sign-ups from the postcode checker on `service-area.html` for people outside the current Dorset coverage area. |
 | `netlify/functions/gocardless-create-billing-request.js` | `POST /api/gocardless-create-billing-request` | Real GoCardless Billing Requests integration (see below). |
 
 `/api/*` is redirected to `/.netlify/functions/*` via `netlify.toml`. Submissions are stored with **Netlify Blobs** (`netlify/functions/_lib/store.js`) — a zero-setup key/value store scoped to the site, so there's no separate database to provision for a v1 launch.

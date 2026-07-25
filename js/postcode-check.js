@@ -29,6 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!form) return;
   const input = document.getElementById('postcode-input');
   const banner = document.getElementById('postcode-result');
+  const interestCapture = document.getElementById('interest-capture');
+  const interestForm = document.getElementById('interest-form');
+  const interestSuccess = document.getElementById('interest-success');
+  const interestPostcodeField = document.getElementById('interest-postcode');
+  const interestStatusField = document.getElementById('interest-status');
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -39,14 +44,39 @@ document.addEventListener('DOMContentLoaded', () => {
       banner.classList.add('in-area');
       banner.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#146c4e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span><strong>Great news!</strong> ${result.prefix ? result.prefix + ' postcodes are' : 'You are'} in our current Dorset coverage area. <a href="pricing.html">See plans →</a></span>`;
-    } else if (result.status === 'soon') {
-      banner.classList.add('out-area');
-      banner.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#b8791f" stroke-width="1.7" stroke-linejoin="round"/></svg>
-        <span><strong>Coming in Year 2:</strong> we're not in your area yet, but South West/South Coast expansion is next on our roadmap. <a href="contact.html">Register your interest →</a></span>`;
+
+      // Fully covered already — no need to register interest.
+      interestCapture.style.display = 'none';
+      interestForm.style.display = '';
+      interestSuccess.style.display = 'none';
+      interestForm.reset();
     } else {
+      const isSoon = result.status === 'soon';
       banner.classList.add('out-area');
-      banner.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#b8791f" stroke-width="1.7" stroke-linejoin="round"/></svg>
-        <span><strong>Not yet, but stay tuned:</strong> we're planning national coverage from Year 3. <a href="contact.html">Register your interest →</a></span>`;
+      banner.innerHTML = isSoon
+        ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#b8791f" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span><strong>Coming in Year 2:</strong> we're not in your area yet, but South West/South Coast expansion is next on our roadmap.</span>`
+        : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#b8791f" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span><strong>Not yet, but stay tuned:</strong> we're planning national coverage from Year 3.</span>`;
+
+      // Out of area — show the inline interest-capture form, pre-tagged
+      // with the postcode they just checked and which phase they fall into.
+      interestForm.style.display = '';
+      interestSuccess.style.display = 'none';
+      interestForm.reset();
+      interestPostcodeField.value = input.value.trim();
+      interestStatusField.value = result.status;
+      interestCapture.style.display = 'block';
     }
   });
+
+  if (interestForm) {
+    interestForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      submitForm(interestForm, '/api/register-interest', () => {
+        interestForm.style.display = 'none';
+        interestSuccess.style.display = 'block';
+      });
+    });
+  }
 });
