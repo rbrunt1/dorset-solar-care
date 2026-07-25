@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 185 48" width="185" height="48" role="img" aria-label="SolarMOT">
+  <title>SolarMOT</title>
+  <!--
+    Primary horizontal lockup: mark + wordmark.
+    Self-contained (no external references) so it can be dropped straight into
+    Illustrator/Figma/Canva, emailed to a signwriter, or used in a document.
+
+    Clear space: keep at least the height of one ray (about 6 units here, or
+    12% of the logo height) free on all sides.
+    Minimum size: 120px wide on screen / 32mm in print. Below that use the
+    icon on its own (logo-icon.svg).
+
+    NOTE ON TYPE: the wordmark uses live <text> with the brand font stack
+    (Plus Jakarta Sans, falling back to a system sans). That keeps this file
+    editable and tiny. If you need a version guaranteed to render identically
+    everywhere — signage, a print shop, a PDF that must not substitute fonts —
+    open this in a vector editor and convert the text to outlines first.
+  -->
+  <defs>
+    <linearGradient id="lkSun" x1="10" y1="8" x2="38" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC15E"/>
+      <stop offset="0.55" stop-color="#F5A623"/>
+      <stop offset="1" stop-color="#DE8A0E"/>
+    </linearGradient>
+    <mask id="lkTick">
+      <rect x="0" y="0" width="48" height="48" fill="white"/>
+      <path d="M17.1 24.3 L22.0 29.2 L31.2 18.9"
+            fill="none" stroke="black" stroke-width="5.1"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+
+  <!-- Mark -->
+  <g stroke="url(#lkSun)" stroke-width="4.5" stroke-linecap="round">
+    <line x1="24" y1="6.0" x2="24" y2="2.4"/>
+    <line x1="24" y1="42.0" x2="24" y2="45.6"/>
+    <line x1="6.0" y1="24" x2="2.4" y2="24"/>
+    <line x1="42.0" y1="24" x2="45.6" y2="24"/>
+    <line x1="11.55" y1="11.55" x2="8.9" y2="8.9"/>
+    <line x1="36.45" y1="36.45" x2="39.1" y2="39.1"/>
+    <line x1="11.55" y1="36.45" x2="8.9" y2="39.1"/>
+    <line x1="36.45" y1="11.55" x2="39.1" y2="8.9"/>
+  </g>
+  <circle cx="24" cy="24" r="14.3" fill="url(#lkSun)" mask="url(#lkTick)"/>
+
+  <!-- Wordmark -->
+  <text x="61" y="32.5"
+        font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        font-size="27" font-weight="800" letter-spacing="-0.9">
+    <tspan fill="#0B3A2E">Solar</tspan><tspan fill="#F5A623">MOT</tspan>
+  </text>
+</svg>
