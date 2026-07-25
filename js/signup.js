@@ -25,7 +25,7 @@
 const PLAN_INFO = {
   essential: { name: 'Essential', price: '£19.99/month', cadence: 'Annual clean', survey: 149 },
   standard:  { name: 'Standard',  price: '£29.99/month', cadence: 'Biannual clean + minor repairs', survey: 75 },
-  premium:   { name: 'Premium',   price: '£39.99/month', cadence: 'Biannual clean + unlimited callouts', survey: 0 }
+  premium:   { name: 'Premium',   price: '£39.99/month', cadence: 'Biannual clean + 2 priority callouts', survey: 0 }
 };
 
 const formatSurvey = (n) => (n === 0 ? 'Included free' : `£${n} one-off`);
