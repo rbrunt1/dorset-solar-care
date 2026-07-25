@@ -244,14 +244,15 @@ strong { color: var(--ink-900); font-weight: 650; }
   margin-right: auto;
   flex-shrink: 0;
 }
+/* The mark is a self-contained SVG (assets/logo-icon.svg) with the tick as
+   negative space, so it needs no coloured tile behind it and reads correctly
+   on the white header and the dark footer alike. */
 .brand-mark {
-  width: 36px; height: 36px;
-  border-radius: 11px;
-  background: linear-gradient(140deg, var(--green-500) 0%, var(--green-700) 55%, var(--teal-800) 100%);
+  width: 34px; height: 34px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px -1px rgba(8,42,34,.28), inset 0 1px 0 rgba(255,255,255,.22);
 }
+.brand-mark img { width: 100%; height: 100%; display: block; }
 /* The "MOT" in the wordmark gets the amber treatment */
 .brand .mot { color: var(--amber-500); }
 .site-footer .brand .mot { color: var(--amber-400); }
