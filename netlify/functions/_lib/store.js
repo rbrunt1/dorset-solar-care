@@ -160,6 +160,18 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
     return jsonResponse(400, { error: 'Invalid JSON body' });
   }
 
+  // Bot checks, before anything is stored or emailed.
+  //
+  // Answers 200 with a fake success rather than an error. This is intentional:
+  // telling a spam bot precisely why it was rejected is telling its author how
+  // to fix it. A silent discard makes the campaign look like it worked, and the
+  // operator moves on. Nothing is written and nothing is emailed.
+  const spam = looksAutomated(data);
+  if (spam) {
+    console.warn(`[${storeName}] discarded a likely automated submission: ${spam}`);
+    return jsonResponse(200, { ok: true, id: 'discarded' });
+  }
+
   const missing = required.filter(f => {
     const v = data[f];
     return v === undefined || v === null || String(v).trim() === '';
@@ -176,6 +188,10 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
   // one, and it is deliberately NOT part of `required` — a missing source
   // must never block a real lead.
   const fields = { ...build(data), source: cleanSource(data.source) };
+  // The trap fields are plumbing, not customer data. Drop them so they never
+  // appear in a stored record, an export, or a notification email.
+  delete fields[HONEYPOT_FIELD];
+  delete fields._fillMs;
 
   let record;
   try {
@@ -196,6 +212,41 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
   const notified = await sendLeadNotification(storeName, record, siteUrl());
 
   return jsonResponse(200, { ok: true, id: record.id, notified: notified.sent === true });
+}
+
+/**
+ * Does this submission look automated?
+ *
+ * Returns a reason string when it does, or null when it looks human. Kept
+ * separate and pure so the thresholds are testable without HTTP.
+ *
+ * The honeypot is the strong signal: a field hidden off-screen, unlabelled to
+ * anyone reading the page, that no human can see or tab into. Anything in it is
+ * a script filling every input it finds.
+ *
+ * The timing check is weaker and deliberately generous. 1.5 seconds is far
+ * below what any real person needs to type a name and postcode, so a false
+ * positive would take something odd like a browser autofilling and submitting
+ * instantly. A missing timing value is NOT treated as suspicious — older
+ * browsers, blocked JS, or a form rendered before the script ran would all
+ * produce that, and losing a real enquiry costs far more than discarding one
+ * piece of spam.
+ */
+const HONEYPOT_FIELD = '_hp_website';
+const MIN_FILL_MS = 1500;
+
+function looksAutomated(data) {
+  if (!data || typeof data !== 'object') return null;
+
+  const hp = data[HONEYPOT_FIELD];
+  if (typeof hp === 'string' && hp.trim() !== '') return 'honeypot field was filled';
+
+  const fill = data._fillMs;
+  if (typeof fill === 'number' && Number.isFinite(fill) && fill >= 0 && fill < MIN_FILL_MS) {
+    return `submitted in ${fill}ms, under the ${MIN_FILL_MS}ms floor`;
+  }
+
+  return null;
 }
 
 /** Best guess at the public site URL, for context inside notification emails. */
@@ -227,4 +278,7 @@ function cleanSource(raw) {
   return Object.keys(out).length ? out : null;
 }
 
-module.exports = { saveSubmission, jsonResponse, handleSubmission, cleanSource, openStore, readAll };
+module.exports = {
+  saveSubmission, jsonResponse, handleSubmission, cleanSource, openStore, readAll,
+  looksAutomated, HONEYPOT_FIELD, MIN_FILL_MS
+};
