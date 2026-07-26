@@ -13,6 +13,14 @@
 //     a time to anyone patient enough to measure response times.
 //
 //  3. A short minimum length is enforced so a token like "admin" can't be set.
+//
+//  4. BOTH sides are trimmed. The supplied value was always trimmed, but the
+//     configured one wasn't — so pasting a token into Netlify with a trailing
+//     newline (which is exactly what `openssl ... | pbcopy` and most copy
+//     actions produce) created a token that could never match anything a human
+//     typed, with no way to tell from the outside. Nobody intends leading or
+//     trailing whitespace in a password, so trimming both is safe and removes
+//     an entire class of unexplainable login failure.
 
 const crypto = require('node:crypto');
 
@@ -32,7 +40,7 @@ function timingSafeEqual(a, b) {
  * @returns {{ok: true} | {ok: false, status: number, error: string}}
  */
 function checkAdminAuth(event) {
-  const expected = process.env.ADMIN_TOKEN;
+  const expected = (process.env.ADMIN_TOKEN || '').trim();
 
   if (!expected || expected.length < MIN_TOKEN_LENGTH) {
     console.error('[admin] ADMIN_TOKEN is not set (or is too short) — refusing all admin access.');
@@ -48,6 +56,12 @@ function checkAdminAuth(event) {
   const supplied = header.replace(/^Bearer\s+/i, '').trim();
 
   if (!supplied || !timingSafeEqual(supplied, expected)) {
+    // Log lengths, never values. A length mismatch points at a copy/paste
+    // problem; equal lengths that still fail point at a genuinely wrong token.
+    console.warn(
+      `[admin] rejected a sign-in. supplied length=${supplied.length}, ` +
+      `configured length=${expected.length}.`
+    );
     return { ok: false, status: 401, error: 'Unauthorised' };
   }
   return { ok: true };
