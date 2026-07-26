@@ -12,7 +12,11 @@
 //  2. Comparison is constant-time. A plain === leaks the token a character at
 //     a time to anyone patient enough to measure response times.
 //
-//  3. A short minimum length is enforced so a token like "admin" can't be set.
+//  3. A minimum length is enforced so a token like "admin" can't be set. 12 is
+//     the floor, chosen by the owner. It is lower than I'd pick on my own: this
+//     endpoint has no username to guess and no account lockout, so a short
+//     password is brute-forceable in a way it wouldn't be behind a normal login
+//     form. The rate limiting below is what makes 12 defensible.
 //
 //  4. BOTH sides are trimmed. The supplied value was always trimmed, but the
 //     configured one wasn't — so pasting a token into Netlify with a trailing
@@ -24,7 +28,7 @@
 
 const crypto = require('node:crypto');
 
-const MIN_TOKEN_LENGTH = 16;
+const MIN_TOKEN_LENGTH = 12;
 
 function timingSafeEqual(a, b) {
   const bufA = Buffer.from(String(a));
@@ -47,7 +51,7 @@ function checkAdminAuth(event) {
     return {
       ok: false,
       status: 503,
-      error: 'Admin access is not configured. Set a strong ADMIN_TOKEN (16+ characters) '
+      error: 'Admin access is not configured. Set a strong ADMIN_TOKEN (12+ characters) '
            + 'in Netlify environment variables.'
     };
   }
