@@ -165,8 +165,22 @@ invisible checks rather than a CAPTCHA:
 1. **A honeypot field**, hidden off-screen (not `display:none`, which the better
    bots skip), `aria-hidden` and untabbable. No human can see or reach it, so
    anything typed into it came from a script filling every input it found.
-2. **A fill-time floor of 1.5 seconds.** Humans take seconds; bots submit in
-   milliseconds.
+2. **A fill-time floor of 2.5 seconds.** The shortest form here has four fields,
+   so even a visitor using autofill and submitting immediately takes longer.
+   Deliberately not higher: past about three seconds you start gambling with
+   fast, genuinely interested people, and a bot author who adds a delay beats
+   any threshold anyway.
+3. **A structural check — did this come from a rendered page at all?** Every
+   form is static HTML and every POST path attaches the trap fields, so a real
+   submission always carries the honeypot key (empty, but present). A request
+   without it never loaded the page, which is how spam reaches a JSON endpoint.
+   Safe to rely on because `main.js` is served `max-age=0, must-revalidate`, so
+   no visitor is ever holding an older script.
+
+   **This one is reported differently — a visible 400, not a silent discard.**
+   If a future change ever breaks a real submission path, somebody sees an error
+   and says so, rather than enquiries vanishing quietly. That is the worst
+   possible failure mode for this business, so it is made loud on purpose.
 
 A caught submission gets a **200 with a fake success**, not an error. Telling a
 spam bot why it was rejected tells its author how to fix it; a silent discard
