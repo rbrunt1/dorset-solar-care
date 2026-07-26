@@ -172,6 +172,15 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
     return jsonResponse(200, { ok: true, id: 'discarded' });
   }
 
+  // Structural check, reported loudly on purpose — see cameFromRenderedForm.
+  if (!cameFromRenderedForm(data)) {
+    console.warn(`[${storeName}] rejected a submission with no evidence of the rendered form.`);
+    return jsonResponse(400, {
+      error: 'This submission did not come from the website form. '
+           + 'Please reload the page and try again.'
+    });
+  }
+
   const missing = required.filter(f => {
     const v = data[f];
     return v === undefined || v === null || String(v).trim() === '';
@@ -224,16 +233,28 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
  * anyone reading the page, that no human can see or tab into. Anything in it is
  * a script filling every input it finds.
  *
- * The timing check is weaker and deliberately generous. 1.5 seconds is far
- * below what any real person needs to type a name and postcode, so a false
- * positive would take something odd like a browser autofilling and submitting
- * instantly. A missing timing value is NOT treated as suspicious — older
- * browsers, blocked JS, or a form rendered before the script ran would all
- * produce that, and losing a real enquiry costs far more than discarding one
- * piece of spam.
+ * The timing floor is 2.5 seconds. The shortest form that reaches this code has
+ * four fields, so even a visitor using browser autofill and submitting straight
+ * away takes longer than that. It is deliberately not higher: past roughly three
+ * seconds you start gambling with fast, autofilling, genuinely interested people,
+ * and a bot author who bothers to add a delay defeats any threshold anyway.
+ *
+ * The third check is the structural one and the strongest of the three: did this
+ * request come from a rendered page at all? Every form on the site is in the
+ * static HTML and every POST path attaches the trap fields, so a real submission
+ * always carries the honeypot key — empty, but present. A request without it
+ * never loaded the page, which is exactly how spam reaches a JSON endpoint.
+ * (Safe to rely on because main.js is served `max-age=0, must-revalidate`, so
+ * there is no window where a visitor holds an older script.)
+ *
+ * Note the asymmetry in how failures are reported, in `handleSubmission`:
+ * confirmed-bot signals are discarded silently, but a missing honeypot key
+ * returns a visible 400. If a future change ever breaks a real submission path,
+ * somebody sees an error and says so — rather than enquiries vanishing quietly,
+ * which is the worst possible failure for this business.
  */
 const HONEYPOT_FIELD = '_hp_website';
-const MIN_FILL_MS = 1500;
+const MIN_FILL_MS = 2500;
 
 function looksAutomated(data) {
   if (!data || typeof data !== 'object') return null;
@@ -247,6 +268,16 @@ function looksAutomated(data) {
   }
 
   return null;
+}
+
+/**
+ * Did this request come from a page that actually rendered the form?
+ * Separate from looksAutomated() because it is reported differently — visibly,
+ * not silently. See the note above.
+ */
+function cameFromRenderedForm(data) {
+  return !!data && typeof data === 'object'
+      && Object.prototype.hasOwnProperty.call(data, HONEYPOT_FIELD);
 }
 
 /** Best guess at the public site URL, for context inside notification emails. */
@@ -280,5 +311,5 @@ function cleanSource(raw) {
 
 module.exports = {
   saveSubmission, jsonResponse, handleSubmission, cleanSource, openStore, readAll,
-  looksAutomated, HONEYPOT_FIELD, MIN_FILL_MS
+  looksAutomated, cameFromRenderedForm, HONEYPOT_FIELD, MIN_FILL_MS
 };
