@@ -52,6 +52,54 @@ function newId(prefix) {
 }
 
 /**
+ * Read every record in a store.
+ *
+ * Blobs has no query layer: listing gives keys, and each value is a separate
+ * HTTP round-trip. Reading them one at a time in a loop meant N sequential
+ * requests inside a 10-second function timeout — fine at 20 records, broken
+ * somewhere in the hundreds.
+ *
+ * Two mitigations:
+ *  - fetch in parallel batches, so N round-trips take roughly N/CONCURRENCY
+ *    of the time;
+ *  - cap the total and report truncation, so the dashboard degrades visibly
+ *    instead of silently timing out and showing nothing.
+ *
+ * This buys headroom, it doesn't remove the ceiling. Past a few thousand
+ * records the right answer is a real database, not a bigger batch size.
+ */
+const READ_CONCURRENCY = 20;
+const DEFAULT_MAX_RECORDS = 1000;
+
+async function readAll(store, { limit = DEFAULT_MAX_RECORDS, label = 'store' } = {}) {
+  const { blobs } = await store.list();
+  const keys = blobs.map(b => b.key);
+  const truncated = keys.length > limit;
+  const wanted = truncated ? keys.slice(0, limit) : keys;
+
+  if (truncated) {
+    console.warn(`[${label}] ${keys.length} records exceeds the ${limit} cap; returning the first ${limit}.`);
+  }
+
+  const out = [];
+  for (let i = 0; i < wanted.length; i += READ_CONCURRENCY) {
+    const slice = wanted.slice(i, i + READ_CONCURRENCY);
+    const values = await Promise.all(slice.map(async (key) => {
+      try {
+        return { key, value: await store.get(key, { type: 'json' }) };
+      } catch (err) {
+        // One unreadable record must not blank the whole dashboard.
+        console.error(`[${label}] could not read ${key}:`, err.message);
+        return null;
+      }
+    }));
+    for (const r of values) if (r && r.value) out.push({ key: r.key, value: r.value });
+  }
+
+  return { records: out, total: keys.length, truncated };
+}
+
+/**
  * Persist one form submission.
  *
  * @param {object} event      the raw Lambda event — required, carries the
@@ -179,4 +227,4 @@ function cleanSource(raw) {
   return Object.keys(out).length ? out : null;
 }
 
-module.exports = { saveSubmission, jsonResponse, handleSubmission, cleanSource, openStore };
+module.exports = { saveSubmission, jsonResponse, handleSubmission, cleanSource, openStore, readAll };

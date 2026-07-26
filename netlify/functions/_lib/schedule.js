@@ -80,10 +80,23 @@ function dueList(customers, today = new Date(), horizonDays = 14) {
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
 }
 
-/** Record a completed visit and roll the schedule forward. */
+/**
+ * Record a completed visit and roll the schedule forward.
+ *
+ * Idempotent for a given date. Blobs has no compare-and-swap, so a
+ * double-clicked "Mark visited" (or a retried request) would otherwise write
+ * the visit twice and push the next due date a whole cadence too far — a
+ * customer silently losing six months of service. Recording the same date
+ * twice is always a mistake, never an intention, so it's a no-op.
+ */
 function completeVisit(customer, visitDate = new Date()) {
   const done = toISODate(parseDate(visitDate));
   const history = Array.isArray(customer.visitHistory) ? customer.visitHistory : [];
+
+  if (history.includes(done) || customer.lastVisit === done) {
+    return { ...customer, nextDue: customer.nextDue || nextDueDate(customer) };
+  }
+
   const updated = {
     ...customer,
     lastVisit: done,
@@ -94,8 +107,35 @@ function completeVisit(customer, visitDate = new Date()) {
   return updated;
 }
 
+/**
+ * Build a customer record from a lead or a completed sign-up.
+ * Kept here so the sign-up flow and the admin "convert lead" action produce
+ * identical shapes — two code paths creating subtly different customers is
+ * how a schedule quietly starts missing people.
+ */
+function customerFromLead(lead, { plan, startDate, status = 'pending' } = {}) {
+  const start = startDate || toISODate(new Date());
+  const record = {
+    id: `cust-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: lead.name || [lead.firstName, lead.lastName].filter(Boolean).join(' ') || lead.contact || lead.company || 'Unknown',
+    email: lead.email || '',
+    phone: lead.phone || '',
+    postcode: lead.postcode || '',
+    address: lead.address1 || '',
+    plan: (plan || lead.plan || 'standard').toLowerCase(),
+    status,
+    startDate: start,
+    createdAt: new Date().toISOString(),
+    source: lead.source || null,
+    fromLead: lead.id ? { store: lead._store || null, id: lead.id } : null
+  };
+  record.nextDue = nextDueDate(record);
+  return record;
+}
+
+
 module.exports = {
   VISITS_PER_YEAR, CADENCE_MONTHS,
   addMonths, toISODate, nextDueDate, daysUntil,
-  withSchedule, dueList, completeVisit
+  withSchedule, dueList, completeVisit, customerFromLead
 };
