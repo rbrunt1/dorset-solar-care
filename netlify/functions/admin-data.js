@@ -6,6 +6,7 @@
 
 const { jsonResponse, openStore, readAll } = require('./_lib/store');
 const { checkAdminAuth } = require('./_lib/auth');
+const { checkRateLimit, recordFailure, clearFailures } = require('./_lib/ratelimit');
 const { withSchedule, dueList, completeVisit, nextDueDate, customerFromLead } = require('./_lib/schedule');
 
 const LEAD_STORES = ['enquiries', 'commercial-quotes', 'bookings', 'interest'];
@@ -21,8 +22,29 @@ async function listAll(event, storeName, limit) {
 }
 
 exports.handler = async (event) => {
+  // Throttle before checking the password, so a blocked client can't keep
+  // guessing. 10 failures per IP per 15 minutes; a success clears the count,
+  // so ordinary use is never affected.
+  const limit = await checkRateLimit(openStore, event);
+  if (limit.limited) {
+    console.warn('[admin] blocked a client that exceeded the failed sign-in limit.');
+    return {
+      statusCode: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': String(limit.retryAfterSec) },
+      body: JSON.stringify({
+        error: `Too many failed sign-in attempts. Try again in ${Math.ceil(limit.retryAfterSec / 60)} minutes.`
+      })
+    };
+  }
+
   const auth = checkAdminAuth(event);
-  if (!auth.ok) return jsonResponse(auth.status, { error: auth.error });
+  if (!auth.ok) {
+    // Only a wrong password counts against the limit. A 503 means the site
+    // isn't configured yet, which is the owner's problem to fix, not an attack.
+    if (auth.status === 401) await recordFailure(openStore, event);
+    return jsonResponse(auth.status, { error: auth.error });
+  }
+  await clearFailures(openStore, event);
 
   try {
     // --- full backup ------------------------------------------------------
