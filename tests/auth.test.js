@@ -60,7 +60,17 @@ test('a whitespace-only configured token fails closed, not through', () => {
   assert.strictEqual(r.status, 503);
 });
 
-test('minimum length is at least 16', () => assert.ok(MIN_TOKEN_LENGTH >= 16));
+// 12 is the owner's chosen floor. Pinned so it can't drift downwards by
+// accident — anything below this is only safe because of the rate limiter.
+test('minimum length is 12 or more', () => assert.ok(MIN_TOKEN_LENGTH >= 12));
+
+process.env.ADMIN_TOKEN = 'elevenchars';  // 11
+test('an 11-character configured token is still refused', () =>
+  assert.strictEqual(checkAdminAuth(ev('elevenchars')).status, 503));
+
+process.env.ADMIN_TOKEN = 'twelvechars1';  // 12
+test('a 12-character configured token is accepted', () =>
+  assert.strictEqual(checkAdminAuth(ev('twelvechars1')).ok, true));
 
 console.log(`\n  ${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
