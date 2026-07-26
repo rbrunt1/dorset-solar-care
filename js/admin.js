@@ -105,6 +105,7 @@ function renderLeads(leads) {
     const status = l.leadStatus || 'new';
     const opts = LEAD_STATUSES.map(s =>
       `<option value="${s}"${s === status ? ' selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('');
+    const converted = !!l.convertedToCustomer;
     return `<tr>
       <td class="text-xs">${fmtDate(l.receivedAt)}</td>
       <td><strong>${esc(name)}</strong>${l.postcode ? `<div class="text-muted text-xs">${esc(l.postcode)}</div>` : ''}</td>
@@ -112,6 +113,9 @@ function renderLeads(leads) {
       <td class="text-xs">${esc(STORE_LABELS[l._store] || l._store)}</td>
       <td class="text-xs">${esc(sourceText(l.source))}</td>
       <td><select class="admin-select" data-lead-store="${esc(l._store)}" data-lead-id="${esc(l.id)}">${opts}</select></td>
+      <td>${converted
+        ? '<span class="text-muted text-xs">Customer created</span>'
+        : `<button class="btn btn-secondary btn-sm" data-convert-store="${esc(l._store)}" data-convert-id="${esc(l.id)}">Make customer</button>`}</td>
     </tr>`;
   }).join('');
 }
@@ -129,6 +133,8 @@ function renderCustomers(customers) {
 
 function render(data) {
   DATA = data;
+  const t = $('admin-truncated');
+  if (t) t.style.display = data.truncated ? 'block' : 'none';
   renderCounts(data.counts);
   renderDue(data.due);
   renderLeads(data.leads);
@@ -201,6 +207,47 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Could not update: ' + err.message);
     } finally {
       sel.disabled = false;
+    }
+  });
+
+  // Convert a lead into a customer — previously "won" only changed a label,
+  // so the customer never reached the visit schedule at all.
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-convert-id]');
+    if (!btn) return;
+    const plan = prompt('Which plan? essential / standard / premium', 'standard');
+    if (!plan) return;
+    btn.disabled = true;
+    try {
+      await api('POST', {
+        action: 'convert-lead',
+        store: btn.dataset.convertStore,
+        id: btn.dataset.convertId,
+        plan: plan.trim().toLowerCase()
+      });
+      await load();
+    } catch (err) {
+      alert('Could not convert: ' + err.message);
+      btn.disabled = false;
+    }
+  });
+
+  // Download a full JSON backup. Blobs has no export, so this is the only
+  // way to get customer records off the platform.
+  $('admin-backup').addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/admin-data?export=1', {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `solarmot-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (err) {
+      alert(err.message);
     }
   });
 
