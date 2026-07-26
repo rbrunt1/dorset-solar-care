@@ -224,6 +224,12 @@ async function submitFinalBooking() {
     slot: state.booking.slot.label
   };
 
+  // This path posts directly rather than through submitForm(), so the bot-trap
+  // fields have to be attached by hand. Without them the server sees no evidence
+  // the request came from a rendered page and rejects it — and this is the
+  // paid sign-up, the most valuable submission on the site.
+  Object.assign(payload, botTrapFields(document.getElementById('details-form')));
+
   let saved = false;
   try {
     const res = await fetch('/api/submit-booking', {

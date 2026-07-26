@@ -223,6 +223,21 @@ function clearFormError(form) {
 const HONEYPOT_NAME = '_hp_website';
 const MIN_FILL_MS = 1500;
 
+/**
+ * The trap values for a given form, so POST paths that don't go through
+ * submitForm() can still attach them. signup.js posts the booking directly —
+ * without this it would look like a bot to the server.
+ */
+function botTrapFields(form) {
+  if (!form) return {};
+  const hp = form.querySelector(`[name="${HONEYPOT_NAME}"]`);
+  const readyAt = Number(form.dataset.readyAt || 0);
+  return {
+    [HONEYPOT_NAME]: hp ? hp.value : '',
+    _fillMs: readyAt ? Date.now() - readyAt : null
+  };
+}
+
 function installBotTraps() {
   document.querySelectorAll('form[data-endpoint], form.js-lead-form, form').forEach(form => {
     // The admin form posts to an authenticated endpoint and needs no traps.
