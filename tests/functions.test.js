@@ -78,9 +78,21 @@ const booking = load('submit-booking.js');
 const interest = load('register-interest.js');
 
 // Netlify injects credentials on event.blobs in Lambda compatibility mode.
-const makeEvent = (body, method = 'POST') => ({
+/**
+ * Build an event that looks like a real browser submission.
+ *
+ * The honeypot key is added by default because that is now the contract: every
+ * form on the site is static HTML and every POST path attaches the trap fields,
+ * so a genuine request always carries the key (empty, but present). Tests that
+ * want to simulate a bot posting straight at the API pass
+ * `{ omitTraps: true }`.
+ */
+const HONEYPOT = '_hp_website';
+const makeEvent = (body, method = 'POST', { omitTraps = false } = {}) => ({
   httpMethod: method,
-  body: body === undefined ? undefined : JSON.stringify(body),
+  body: body === undefined
+    ? undefined
+    : JSON.stringify(omitTraps ? body : { [HONEYPOT]: '', _fillMs: 30000, ...body }),
   blobs: 'eyJzdHViIjp0cnVlfQ==',
   headers: {}
 });
@@ -414,4 +426,70 @@ test('a form field cannot overwrite the attribution object', async () => {
   }));
   assert.strictEqual(res.statusCode, 200);
   assert.strictEqual(calls.setJSON[0].value.source, null);
+});
+
+
+// ===========================================================================
+// Bot traps at the handler level
+//
+// The unit-level thresholds live in botcheck.test.js; these pin down what the
+// endpoint actually does with them — in particular that nothing is stored and
+// nothing is emailed.
+// ===========================================================================
+
+test('a direct API POST with no trap fields is rejected and nothing is stored', async () => {
+  reset();
+  const res = await enquiry.handler(makeEvent(
+    { name: 'Bot', email: 'bot@example.com' }, 'POST', { omitTraps: true }
+  ));
+  assert.strictEqual(res.statusCode, 400, 'a request that never rendered the form must be refused');
+  assert.strictEqual(calls.setJSON.length, 0, 'nothing stored');
+  assert.strictEqual(emails.length, 0, 'nothing emailed');
+});
+
+test('a filled honeypot is discarded silently, with a fake success', async () => {
+  reset();
+  const res = await enquiry.handler(makeEvent({
+    name: 'Spam Bot', email: 'spam@example.com', [HONEYPOT]: 'http://spam.example'
+  }));
+  // A fake 200 on purpose: an error tells the bot's author how to fix it.
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(JSON.parse(res.body).id, 'discarded');
+  assert.strictEqual(calls.setJSON.length, 0, 'nothing stored');
+  assert.strictEqual(emails.length, 0, 'nothing emailed');
+});
+
+test('an impossibly fast submission is discarded silently', async () => {
+  reset();
+  const res = await enquiry.handler(makeEvent({
+    name: 'Fast Bot', email: 'fast@example.com', _fillMs: 30
+  }));
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(JSON.parse(res.body).id, 'discarded');
+  assert.strictEqual(calls.setJSON.length, 0);
+  assert.strictEqual(emails.length, 0);
+});
+
+test('the trap fields never reach the stored record or the email', async () => {
+  reset();
+  const res = await enquiry.handler(makeEvent({
+    name: 'Rob Brunt', email: 'rob@example.com', message: 'Panels need a look'
+  }));
+  assert.strictEqual(res.statusCode, 200);
+
+  const stored = calls.setJSON[0].value;
+  assert.ok(!(HONEYPOT in stored), 'honeypot must not be stored as customer data');
+  assert.ok(!('_fillMs' in stored), 'timing must not be stored as customer data');
+  assert.ok(!emails[0].body.text.includes('_fillMs'), 'plumbing must not appear in the email');
+  assert.ok(!emails[0].body.html.includes(HONEYPOT), 'plumbing must not appear in the email');
+});
+
+test('a real submission that took a plausible time is stored normally', async () => {
+  reset();
+  const res = await enquiry.handler(makeEvent({
+    name: 'Rob Brunt', email: 'rob@example.com', _fillMs: 18000
+  }));
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(calls.setJSON.length, 1);
+  assert.strictEqual(emails.length, 1);
 });
