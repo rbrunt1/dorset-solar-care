@@ -74,6 +74,42 @@ async function gcFetch(path, options = {}) {
  * bill the customer twice a month forever. The mandate id is used as the
  * idempotency key so a retry returns the existing subscription instead.
  */
+/**
+ * Read the plan off the mandate itself.
+ *
+ * A webhook event's `metadata` is the EVENT's metadata, not the resource's —
+ * the plan we set when creating the billing request does not come through on
+ * the event. Guessing would mean billing an Essential customer the Standard
+ * price, so the mandate is fetched and read directly.
+ *
+ * If the mandate genuinely carries no plan we throw rather than defaulting.
+ * A missing subscription that shows up in the logs is recoverable; a customer
+ * charged the wrong amount by a silent fallback is a chargeback and a
+ * complaint.
+ */
+async function resolvePlan(mandateId, existing) {
+  try {
+    const res = await gcFetch(`/mandates/${mandateId}`);
+    const plan = res.mandates?.metadata?.plan;
+    if (plan && PLAN_PRICING[String(plan).toLowerCase()]) return String(plan).toLowerCase();
+  } catch (err) {
+    console.error('[gc-webhook] could not read mandate metadata:', err.message);
+  }
+  if (existing?.plan && PLAN_PRICING[existing.plan]) return existing.plan;
+  throw new Error(
+    `Cannot determine the plan for mandate ${mandateId}. Refusing to guess a price — ` +
+    'create the subscription manually in GoCardless and add the customer in the admin page.'
+  );
+}
+
+/** The customer's name and postcode, also only available on the mandate. */
+async function mandateDetails(mandateId) {
+  try {
+    const res = await gcFetch(`/mandates/${mandateId}`);
+    return res.mandates?.metadata || {};
+  } catch { return {}; }
+}
+
 async function createSubscription(mandateId, plan) {
   const pricing = PLAN_PRICING[String(plan).toLowerCase()] || PLAN_PRICING.standard;
   return gcFetch('/subscriptions', {
@@ -138,14 +174,19 @@ exports.handler = async (event) => {
         // mandate — billing the customer twice, every month, forever.
         const existing = await findByMandate(store, mandateId);
 
-        const plan = ev.metadata?.plan || existing?.plan || 'standard';
+        const plan = await resolvePlan(mandateId, existing);
         const sub = await createSubscription(mandateId, plan);
         const subscriptionId = sub.subscriptions?.id;
 
         const record = existing
           ? { ...existing, status: 'active', gcSubscriptionId: subscriptionId, activatedAt: new Date().toISOString() }
           : {
-              ...customerFromLead({ name: 'Pending — from GoCardless', plan }, { plan, status: 'active' }),
+              ...customerFromLead(
+                (({ name, postcode }) => ({ name: name || 'Name not captured', postcode: postcode || '' }))(
+                  await mandateDetails(mandateId)
+                ),
+                { plan, status: 'active' }
+              ),
               gcMandateId: mandateId,
               gcSubscriptionId: subscriptionId,
               activatedAt: new Date().toISOString()
