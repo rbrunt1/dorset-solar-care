@@ -157,6 +157,38 @@ If you open the HTML files directly from disk (`file://`), forms fall back to a 
 Without `GOCARDLESS_ACCESS_TOKEN` set, the function returns `{ mock: true }` and the sign-up flow shows a clearly labelled demo banner instead of redirecting to a real bank authorisation page.
 - `GOCARDLESS_WEBHOOK_SECRET` — the signing secret shown when you create the webhook endpoint in GoCardless
 
+### Bot protection on the public forms
+
+The enquiry, booking, commercial-quote and area-interest forms carry two
+invisible checks rather than a CAPTCHA:
+
+1. **A honeypot field**, hidden off-screen (not `display:none`, which the better
+   bots skip), `aria-hidden` and untabbable. No human can see or reach it, so
+   anything typed into it came from a script filling every input it found.
+2. **A fill-time floor of 1.5 seconds.** Humans take seconds; bots submit in
+   milliseconds.
+
+A caught submission gets a **200 with a fake success**, not an error. Telling a
+spam bot why it was rejected tells its author how to fix it; a silent discard
+makes the run look successful and the operator moves on. Nothing is stored and
+no email is sent.
+
+The bias is deliberately towards letting spam through rather than blocking a
+real customer: a **missing** timing value is treated as human, because blocked
+JavaScript or an odd browser would produce that, and a lost enquiry costs far
+more than a discarded spam message.
+
+Neither check stops someone who reads the public JS and adapts — only a real
+CAPTCHA does that. They stop indiscriminate spam, which is what actually
+arrives. If genuine spam starts getting through, the upgrade is Cloudflare
+Turnstile: invisible to most visitors, but it needs a Cloudflare account and a
+secret key, and Cloudflare would have to be added to the privacy policy as a
+processor.
+
+There is deliberately **no CAPTCHA on the admin login**. It is a single-user
+page and the rate limiter already stops automated guessing, so a puzzle there
+would only slow the owner down.
+
 ### Why the webhook is not optional
 
 A Direct Debit **mandate** is only permission to collect money. It does not
