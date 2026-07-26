@@ -120,6 +120,21 @@ If you open the HTML files directly from disk (`file://`), forms fall back to a 
 
 - `GOCARDLESS_ACCESS_TOKEN` — your GoCardless API access token (sandbox to start)
 - `GOCARDLESS_ENVIRONMENT` — `sandbox` (default) or `live`
+- `ADMIN_TOKEN` — the password for /admin. Minimum 12 characters. Production
+  context only: leaving the other deploy contexts empty means the dashboard
+  returns 503 on preview and branch URLs rather than accepting the live
+  password there.
+
+  Failed sign-ins are rate limited to 10 per IP per 15 minutes, which is what
+  makes a 12-character passphrase defensible on an endpoint with no username
+  and no account lockout. A successful sign-in clears the counter, so normal
+  use is never throttled. The limiter fails OPEN if Blobs is unavailable —
+  deliberately, so a storage outage can't lock you out of your own customer
+  records. The password check still runs regardless.
+
+  Environment variable changes do not reach already-built functions. After
+  changing this, trigger a redeploy or it will appear not to have worked.
+
 - `NETLIFY_API_TOKEN` — a Netlify personal access token. Required **only** for the
   weekly scheduled digest: scheduled functions are invoked with a synthetic event
   that carries no Blobs credentials, so without this the digest silently never
