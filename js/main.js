@@ -1,5 +1,7 @@
 // Shared behaviours across all pages: mobile nav toggle, footer year, active link.
 document.addEventListener('DOMContentLoaded', () => {
+  installBotTraps();
+
   const toggle = document.querySelector('.nav-toggle');
   const links = document.querySelector('.nav-links');
   if (toggle && links) {
@@ -195,6 +197,62 @@ function clearFormError(form) {
  *                                plain form fields.
  * @returns {Promise<boolean>} whether the submission succeeded
  */
+/* ------------------------------------------------------------------------
+ * Bot traps for the public forms.
+ *
+ * Deliberately NOT a CAPTCHA. A CAPTCHA would make every real customer solve
+ * a puzzle to ask a question about their solar panels, which costs enquiries —
+ * and enquiries are the whole point of the site. These two checks are invisible
+ * to a human and catch the overwhelming majority of automated form spam:
+ *
+ *   1. A honeypot field, hidden from people but visible to a scripted filler.
+ *      Anything that types into it is not a customer.
+ *   2. A fill-time check. Humans take seconds to complete a form; bots submit
+ *      in milliseconds.
+ *
+ * Neither stops a determined attacker who reads this file and adapts — nothing
+ * short of a real CAPTCHA does. They stop indiscriminate spam bots, which is
+ * what actually turns up. If genuine spam ever gets through, the upgrade is
+ * Cloudflare Turnstile, which is invisible to most visitors.
+ *
+ * The honeypot is hidden with off-screen positioning rather than
+ * `display:none`, because the more capable bots skip fields that are
+ * display:none. It is also aria-hidden and untabbable so screen readers and
+ * keyboard users never meet it.
+ * --------------------------------------------------------------------- */
+const HONEYPOT_NAME = '_hp_website';
+const MIN_FILL_MS = 1500;
+
+function installBotTraps() {
+  document.querySelectorAll('form[data-endpoint], form.js-lead-form, form').forEach(form => {
+    // The admin form posts to an authenticated endpoint and needs no traps.
+    if (form.id === 'customer-form' || form.id === 'admin-login') return;
+    if (form.querySelector(`[name="${HONEYPOT_NAME}"]`)) return;
+
+    const wrap = document.createElement('div');
+    wrap.setAttribute('aria-hidden', 'true');
+    wrap.style.cssText = 'position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;';
+
+    const label = document.createElement('label');
+    label.setAttribute('for', `${HONEYPOT_NAME}-${Math.random().toString(36).slice(2, 7)}`);
+    label.textContent = 'Leave this field empty';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = HONEYPOT_NAME;
+    input.id = label.getAttribute('for');
+    input.tabIndex = -1;
+    input.autocomplete = 'off';
+
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    form.appendChild(wrap);
+
+    // When this form became ready for a human to fill in.
+    form.dataset.readyAt = String(Date.now());
+  });
+}
+
 async function submitForm(form, endpoint, onSuccess, extraFields = {}) {
   const buttons = form.querySelectorAll('button[type="submit"]');
   buttons.forEach(b => {
@@ -207,6 +265,11 @@ async function submitForm(form, endpoint, onSuccess, extraFields = {}) {
   const payload = {};
   new FormData(form).forEach((value, key) => { payload[key] = value; });
   Object.assign(payload, extraFields);
+
+  // How long the form was on screen before submitting. Sent as a plain number;
+  // the server treats an implausibly fast submission as automated.
+  const readyAt = Number(form.dataset.readyAt || 0);
+  payload._fillMs = readyAt ? Date.now() - readyAt : null;
 
   // Attach attribution last so a form field can never overwrite it.
   const source = getLeadSource();
