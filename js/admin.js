@@ -25,6 +25,10 @@ async function api(method, body) {
     method,
     headers: {
       'Authorization': `Bearer ${token()}`,
+      // Marks this as a request from the admin page. The endpoint 404s without
+      // it, which turns away automated scanners before they ever reach the
+      // password check.
+      'X-SolarMOT-Client': 'admin',
       ...(body ? { 'Content-Type': 'application/json' } : {})
     },
     ...(body ? { body: JSON.stringify(body) } : {})
@@ -34,6 +38,11 @@ async function api(method, body) {
   if (!res.ok) {
     const err = new Error(payload.error || `Request failed (${res.status})`);
     err.status = res.status;
+    // 429 carries its own human-readable message from the server; don't let the
+    // generic fallback bury it, or a locked-out owner won't know to just wait.
+    if (res.status === 429 && !payload.error) {
+      err.message = 'Too many failed sign-in attempts. Please wait and try again.';
+    }
     throw err;
   }
   return payload;
@@ -237,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('admin-backup').addEventListener('click', async () => {
     try {
       const res = await fetch('/api/admin-data?export=1', {
-        headers: { Authorization: `Bearer ${token()}` }
+        headers: { Authorization: `Bearer ${token()}`, 'X-SolarMOT-Client': 'admin' }
       });
       if (!res.ok) throw new Error(`Export failed (${res.status})`);
       const blob = await res.blob();
