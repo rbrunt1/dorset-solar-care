@@ -7,7 +7,7 @@
 // they'd forgotten about didn't happen — they just cancel three months later.
 // An unread dashboard doesn't prevent that; an email on a Monday morning does.
 
-const { connectLambda, getStore } = require('@netlify/blobs');
+const { openStore } = require('./_lib/store');
 const { dueList } = require('./_lib/schedule');
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
@@ -40,8 +40,7 @@ exports.handler = async (event) => {
   const from = process.env.LEAD_NOTIFICATION_FROM || 'SolarMOT <notifications@solarmot.co.uk>';
 
   try {
-    connectLambda(event);
-    const store = getStore('customers');
+    const store = openStore(event, 'customers');
     const { blobs } = await store.list();
     const customers = [];
     for (const b of blobs) {

@@ -4,16 +4,15 @@
 //
 // All access requires ADMIN_TOKEN. See _lib/auth.js for why this fails closed.
 
-const { connectLambda, getStore } = require('@netlify/blobs');
-const { jsonResponse } = require('./_lib/store');
+const { jsonResponse, openStore } = require('./_lib/store');
 const { checkAdminAuth } = require('./_lib/auth');
 const { withSchedule, dueList, completeVisit, nextDueDate } = require('./_lib/schedule');
 
 const LEAD_STORES = ['enquiries', 'commercial-quotes', 'bookings', 'interest'];
 const CUSTOMER_STORE = 'customers';
 
-async function listAll(storeName) {
-  const store = getStore(storeName);
+async function listAll(event, storeName) {
+  const store = openStore(event, storeName);
   const { blobs } = await store.list();
   const out = [];
   for (const b of blobs) {
@@ -32,15 +31,13 @@ exports.handler = async (event) => {
   const auth = checkAdminAuth(event);
   if (!auth.ok) return jsonResponse(auth.status, { error: auth.error });
 
-  connectLambda(event);
-
   try {
     if (event.httpMethod === 'GET') {
-      const leadGroups = await Promise.all(LEAD_STORES.map(listAll));
+      const leadGroups = await Promise.all(LEAD_STORES.map(n => listAll(event, n)));
       const leads = leadGroups.flat()
         .sort((a, b) => String(b.receivedAt || '').localeCompare(String(a.receivedAt || '')));
 
-      const customers = (await listAll(CUSTOMER_STORE)).map(c => withSchedule(c));
+      const customers = (await listAll(event, CUSTOMER_STORE)).map(c => withSchedule(c));
       const due = dueList(customers);
 
       return jsonResponse(200, {
@@ -72,7 +69,7 @@ exports.handler = async (event) => {
         const allowed = ['new', 'contacted', 'quoted', 'won', 'lost'];
         if (!allowed.includes(leadStatus)) return jsonResponse(400, { error: 'Invalid status' });
 
-        const store = getStore(storeName);
+        const store = openStore(event, storeName);
         const rec = await store.get(id, { type: 'json' });
         if (!rec) return jsonResponse(404, { error: 'Lead not found' });
         const updated = { ...rec, leadStatus, leadStatusAt: new Date().toISOString() };
@@ -86,7 +83,7 @@ exports.handler = async (event) => {
         if (!customer || !customer.name || !customer.plan) {
           return jsonResponse(400, { error: 'Customer needs at least a name and a plan' });
         }
-        const store = getStore(CUSTOMER_STORE);
+        const store = openStore(event, CUSTOMER_STORE);
         const id = customer.id || `cust-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const startDate = customer.startDate || new Date().toISOString().slice(0, 10);
         const record = {
@@ -104,7 +101,7 @@ exports.handler = async (event) => {
       if (action === 'complete-visit') {
         const { id, visitDate } = body;
         if (!id) return jsonResponse(400, { error: 'Missing id' });
-        const store = getStore(CUSTOMER_STORE);
+        const store = openStore(event, CUSTOMER_STORE);
         const rec = await store.get(id, { type: 'json' });
         if (!rec) return jsonResponse(404, { error: 'Customer not found' });
         const updated = completeVisit(rec, visitDate || new Date());
