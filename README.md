@@ -120,8 +120,40 @@ If you open the HTML files directly from disk (`file://`), forms fall back to a 
 
 - `GOCARDLESS_ACCESS_TOKEN` — your GoCardless API access token (sandbox to start)
 - `GOCARDLESS_ENVIRONMENT` — `sandbox` (default) or `live`
+- `NETLIFY_API_TOKEN` — a Netlify personal access token. Required **only** for the
+  weekly scheduled digest: scheduled functions are invoked with a synthetic event
+  that carries no Blobs credentials, so without this the digest silently never
+  arrives. Request-triggered functions do not need it.
 
 Without `GOCARDLESS_ACCESS_TOKEN` set, the function returns `{ mock: true }` and the sign-up flow shows a clearly labelled demo banner instead of redirecting to a real bank authorisation page.
+- `GOCARDLESS_WEBHOOK_SECRET` — the signing secret shown when you create the webhook endpoint in GoCardless
+
+### Why the webhook is not optional
+
+A Direct Debit **mandate** is only permission to collect money. It does not
+collect anything. Creating a mandate and stopping there — which is what the
+sign-up flow did on its own — means a customer completes sign-up, sees a
+success screen, and is never charged a penny.
+
+`gocardless-webhook.js` closes that loop: when GoCardless confirms the mandate
+is active, it creates the recurring monthly **subscription** at the plan price
+and writes the customer into the visit schedule.
+
+Set it up in the GoCardless dashboard under Developers → Webhook endpoints:
+
+- URL: `https://solarmot.co.uk/api/gocardless-webhook`
+- Copy the signing secret into `GOCARDLESS_WEBHOOK_SECRET` in Netlify
+
+Every request is verified by HMAC-SHA256 over the raw body. If the secret is
+unset the endpoint returns 503 rather than trusting the request — an
+unverified webhook would let anyone who finds the URL activate a free
+subscription. Subscription creation is idempotent on the mandate id, because
+GoCardless retries and a duplicate would bill the customer twice a month
+indefinitely.
+
+Customer status is only ever set from a verified webhook, never from the
+browser redirect — anyone can type `?gc_status=success` into the address bar.
+
 
 **Still needed for a real launch (not implemented here):**
 - A GoCardless **webhook** endpoint to confirm mandate status server-side before marking a subscription active — the redirect back from GoCardless shouldn't be trusted alone.

@@ -30,6 +30,7 @@
     <div class="admin-bar-right">
       <span id="admin-generated" class="text-muted text-xs"></span>
       <button class="btn btn-secondary btn-sm" id="admin-refresh">Refresh</button>
+      <button class="btn btn-secondary btn-sm" id="admin-backup">Download backup</button>
       <button class="btn btn-ghost btn-sm" id="admin-signout">Sign out</button>
     </div>
   </div>
@@ -73,6 +74,7 @@
           <tbody id="due-rows"></tbody>
         </table>
       </div>
+      <p class="text-muted text-sm" id="admin-truncated" style="display:none;color:var(--amber-600);padding:10px 2px;">Showing a capped subset — there are more records than the dashboard loads at once.</p>
       <p class="text-muted text-sm" id="due-empty" style="display:none;padding:18px 2px;">
         Nothing due in the next 14 days.
       </p>
@@ -82,7 +84,7 @@
     <div class="admin-panel" data-panel="leads">
       <div class="table-scroll">
         <table class="compare-table admin-table">
-          <thead><tr><th>Received</th><th>Name</th><th>Contact</th><th>Type</th><th>Came from</th><th>Status</th></tr></thead>
+          <thead><tr><th>Received</th><th>Name</th><th>Contact</th><th>Type</th><th>Came from</th><th>Status</th><th></th></tr></thead>
           <tbody id="lead-rows"></tbody>
         </table>
       </div>
