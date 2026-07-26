@@ -8,6 +8,17 @@ const test = require('node:test');
 const assert = require('node:assert');
 const path = require('node:path');
 
+const Module = require('node:module');
+const _origResolve = Module._resolveFilename;
+Module._resolveFilename = function (request, ...rest) {
+  if (request === '@netlify/blobs') return '@netlify/blobs';
+  return _origResolve.call(this, request, ...rest);
+};
+require.cache['@netlify/blobs'] = {
+  id: '@netlify/blobs', filename: '@netlify/blobs', loaded: true,
+  exports: { connectLambda() {}, getStore(arg) { return { _arg: arg }; } }
+};
+
 const S = require(path.join(__dirname, '..', 'netlify', 'functions', '_lib', 'schedule.js'));
 const { checkAdminAuth } = require(path.join(__dirname, '..', 'netlify', 'functions', '_lib', 'auth.js'));
 
@@ -123,4 +134,41 @@ test('a wrong token is rejected and a correct one accepted', () => {
   // header name casing varies between platforms
   assert.strictEqual(checkAdminAuth({ headers: { Authorization: 'Bearer a-sufficiently-long-test-token' } }).ok, true);
   if (saved === undefined) delete process.env.ADMIN_TOKEN; else process.env.ADMIN_TOKEN = saved;
+});
+
+// ---- Blobs access from a scheduled-function context ------------------------
+
+test('openStore explains itself instead of throwing a bare library error', () => {
+  // A scheduled function is invoked with a synthetic event that has no .blobs,
+  // so connectLambda is a no-op and getStore() would throw
+  // MissingBlobsEnvironmentError. The weekly digest would then just never
+  // arrive — and nobody notices an email that doesn't turn up. This asserts we
+  // fail loudly with an actionable message instead.
+  const { openStore } = require(path.join(__dirname, '..', 'netlify', 'functions', '_lib', 'store.js'));
+  const savedSite = process.env.SITE_ID, savedTok = process.env.NETLIFY_API_TOKEN;
+  delete process.env.SITE_ID; delete process.env.NETLIFY_SITE_ID;
+  delete process.env.NETLIFY_API_TOKEN; delete process.env.NETLIFY_AUTH_TOKEN;
+
+  assert.throws(
+    () => openStore({ next_run: '2026-08-01T07:00:00Z' }, 'customers'),
+    /NETLIFY_API_TOKEN/,
+    'must name the variable to set'
+  );
+
+  if (savedSite !== undefined) process.env.SITE_ID = savedSite;
+  if (savedTok !== undefined) process.env.NETLIFY_API_TOKEN = savedTok;
+});
+
+test('openStore uses explicit credentials when the event carries none', () => {
+  const { openStore } = require(path.join(__dirname, '..', 'netlify', 'functions', '_lib', 'store.js'));
+  const savedSite = process.env.SITE_ID, savedTok = process.env.NETLIFY_API_TOKEN;
+  process.env.SITE_ID = 'site-123';
+  process.env.NETLIFY_API_TOKEN = 'tok-456';
+
+  // The stubbed getStore records how it was called.
+  const store = openStore({ next_run: 'x' }, 'customers');
+  assert.ok(store, 'a store should be returned via the credential fallback');
+
+  if (savedSite === undefined) delete process.env.SITE_ID; else process.env.SITE_ID = savedSite;
+  if (savedTok === undefined) delete process.env.NETLIFY_API_TOKEN; else process.env.NETLIFY_API_TOKEN = savedTok;
 });
