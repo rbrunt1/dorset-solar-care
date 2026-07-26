@@ -6,7 +6,7 @@
 
 const { jsonResponse, openStore, readAll } = require('./_lib/store');
 const { checkAdminAuth } = require('./_lib/auth');
-const { checkRateLimit, recordFailure, clearFailures } = require('./_lib/ratelimit');
+const { checkRateLimit, recordFailure, clearFailures, hasClientHeader } = require('./_lib/ratelimit');
 const { withSchedule, dueList, completeVisit, nextDueDate, customerFromLead } = require('./_lib/schedule');
 
 const LEAD_STORES = ['enquiries', 'commercial-quotes', 'bookings', 'interest'];
@@ -22,12 +22,23 @@ async function listAll(event, storeName, limit) {
 }
 
 exports.handler = async (event) => {
+  // Turn away anything that isn't the admin page before doing any work. Most
+  // hostile traffic to an endpoint like this is automated scanning that POSTs
+  // blindly at every path it finds; none of it sends this header. A targeted
+  // attacker will, since the header is in the public JS — this is a filter, not
+  // a lock. Its real value is that the failure counters below then reflect
+  // genuine attempts rather than background noise.
+  if (!hasClientHeader(event)) {
+    return jsonResponse(404, { error: 'Not found' });
+  }
+
   // Throttle before checking the password, so a blocked client can't keep
-  // guessing. 10 failures per IP per 15 minutes; a success clears the count,
-  // so ordinary use is never affected.
+  // guessing. 5 failures per IP, with an escalating block, plus a global cap
+  // that catches distributed attempts. A success clears the count, so ordinary
+  // use is never affected.
   const limit = await checkRateLimit(openStore, event);
   if (limit.limited) {
-    console.warn('[admin] blocked a client that exceeded the failed sign-in limit.');
+    console.warn(`[admin] blocked a client that exceeded the failed sign-in limit (${limit.reason}).`);
     return {
       statusCode: 429,
       headers: { 'Content-Type': 'application/json', 'Retry-After': String(limit.retryAfterSec) },
