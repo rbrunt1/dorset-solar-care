@@ -16,6 +16,37 @@
 const { connectLambda, getStore } = require('@netlify/blobs');
 const { sendLeadNotification } = require('./notify');
 
+/**
+ * Open a Blobs store from ANY function context.
+ *
+ * connectLambda(event) only works when Netlify has put credentials on
+ * `event.blobs`, which it does for request-triggered functions. A SCHEDULED
+ * function is invoked internally with a synthetic event ({ next_run }) that
+ * carries no such credentials — so connectLambda is a no-op there and
+ * getStore() throws MissingBlobsEnvironmentError.
+ *
+ * That failure would be invisible: the weekly digest would simply never
+ * arrive, and nobody notices an email that doesn't turn up. So this falls back
+ * to explicit credentials, and if neither route is available it throws a
+ * message that says exactly what to configure rather than a bare library error.
+ */
+function openStore(event, name) {
+  if (event && event.blobs) {
+    connectLambda(event);
+    return getStore(name);
+  }
+  const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+  const token = process.env.NETLIFY_API_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+  if (siteID && token) return getStore({ name, siteID, token });
+
+  throw new Error(
+    'Netlify Blobs is unavailable in this context. Request-triggered functions get ' +
+    'credentials on event.blobs; scheduled functions do not. Set NETLIFY_API_TOKEN ' +
+    '(a Netlify personal access token) in the environment so scheduled functions can ' +
+    'reach Blobs. SITE_ID is provided automatically.'
+  );
+}
+
 function newId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -148,4 +179,4 @@ function cleanSource(raw) {
   return Object.keys(out).length ? out : null;
 }
 
-module.exports = { saveSubmission, jsonResponse, handleSubmission, cleanSource };
+module.exports = { saveSubmission, jsonResponse, handleSubmission, cleanSource, openStore };
