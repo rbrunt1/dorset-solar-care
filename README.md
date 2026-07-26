@@ -125,12 +125,26 @@ If you open the HTML files directly from disk (`file://`), forms fall back to a 
   returns 503 on preview and branch URLs rather than accepting the live
   password there.
 
-  Failed sign-ins are rate limited to 10 per IP per 15 minutes, which is what
-  makes a 12-character passphrase defensible on an endpoint with no username
-  and no account lockout. A successful sign-in clears the counter, so normal
-  use is never throttled. The limiter fails OPEN if Blobs is unavailable —
-  deliberately, so a storage outage can't lock you out of your own customer
-  records. The password check still runs regardless.
+  Four layers protect it, since it has no username to guess and no account
+  lockout:
+
+  1. **A required client header.** The admin page sends `X-SolarMOT-Client`;
+     requests without it get a 404 before the password is read. This is a
+     filter, not a lock — the header name is in the public JS, so a targeted
+     attacker will send it. What it does is turn away automated scanners, which
+     are the overwhelming majority of hostile traffic, and keep the failure
+     counters meaningful.
+  2. **5 failed sign-ins per IP** per 15-minute window.
+  3. **Escalating blocks** — 15 minutes, then an hour, then six. A mistyped
+     password costs you a quarter of an hour; a script gets frozen out.
+  4. **A global cap of 40 failures/hour across all IPs.** Layers 2 and 3 are
+     per-IP, so a botnet with a thousand addresses would sail past them. This
+     catches that shape of attack.
+
+  A successful sign-in clears your counter, so normal use is never throttled.
+  Everything fails OPEN if Blobs is unavailable — deliberately, so a storage
+  outage can't lock you out of your own customer records. The password check
+  still runs regardless.
 
   Environment variable changes do not reach already-built functions. After
   changing this, trigger a redeploy or it will appear not to have worked.
