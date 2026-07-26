@@ -74,8 +74,20 @@ exports.handler = async (event) => {
       headers: gcHeaders,
       body: JSON.stringify({
         billing_requests: {
-          mandate_request: { currency: 'GBP', scheme: 'bacs' },
-          metadata: plan ? { plan } : undefined
+          mandate_request: {
+            currency: 'GBP',
+            scheme: 'bacs',
+            // Carried through to the mandate so gocardless-webhook.js knows
+            // which plan price to bill when the mandate goes active. Without
+            // this the webhook has to guess, and guessing the price is worse
+            // than failing.
+            metadata: {
+              plan: String(plan || '').toLowerCase(),
+              name: [customer?.firstName, customer?.lastName].filter(Boolean).join(' ').slice(0, 50),
+              postcode: String(customer?.postcode || '').slice(0, 10)
+            }
+          },
+          metadata: plan ? { plan: String(plan).toLowerCase() } : undefined
         }
       })
     });

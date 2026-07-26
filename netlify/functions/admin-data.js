@@ -4,27 +4,20 @@
 //
 // All access requires ADMIN_TOKEN. See _lib/auth.js for why this fails closed.
 
-const { jsonResponse, openStore } = require('./_lib/store');
+const { jsonResponse, openStore, readAll } = require('./_lib/store');
 const { checkAdminAuth } = require('./_lib/auth');
-const { withSchedule, dueList, completeVisit, nextDueDate } = require('./_lib/schedule');
+const { withSchedule, dueList, completeVisit, nextDueDate, customerFromLead } = require('./_lib/schedule');
 
 const LEAD_STORES = ['enquiries', 'commercial-quotes', 'bookings', 'interest'];
 const CUSTOMER_STORE = 'customers';
 
-async function listAll(event, storeName) {
+async function listAll(event, storeName, limit) {
   const store = openStore(event, storeName);
-  const { blobs } = await store.list();
-  const out = [];
-  for (const b of blobs) {
-    try {
-      const v = await store.get(b.key, { type: 'json' });
-      if (v) out.push({ ...v, _store: storeName, id: v.id || b.key });
-    } catch (err) {
-      // One unreadable blob must not blank the whole dashboard.
-      console.error(`[admin] could not read ${storeName}/${b.key}:`, err.message);
-    }
-  }
-  return out;
+  const { records, total, truncated } = await readAll(store, { limit, label: storeName });
+  return {
+    items: records.map(({ key, value }) => ({ ...value, _store: storeName, id: value.id || key })),
+    total, truncated
+  };
 }
 
 exports.handler = async (event) => {
@@ -32,17 +25,39 @@ exports.handler = async (event) => {
   if (!auth.ok) return jsonResponse(auth.status, { error: auth.error });
 
   try {
+    // --- full backup ------------------------------------------------------
+    // Blobs has no snapshot or export. If a store is deleted the customer
+    // records are simply gone, so being able to pull everything down as one
+    // JSON file is the difference between an inconvenience and a disaster.
+    if (event.httpMethod === 'GET' && event.queryStringParameters?.export === '1') {
+      const dump = {};
+      for (const name of [...LEAD_STORES, CUSTOMER_STORE]) {
+        dump[name] = (await listAll(event, name, 10000)).items;
+      }
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="solarmot-backup-${new Date().toISOString().slice(0, 10)}.json"`
+        },
+        body: JSON.stringify({ exportedAt: new Date().toISOString(), data: dump }, null, 2)
+      };
+    }
+
     if (event.httpMethod === 'GET') {
-      const leadGroups = await Promise.all(LEAD_STORES.map(n => listAll(event, n)));
-      const leads = leadGroups.flat()
+      const leadGroups = await Promise.all(LEAD_STORES.map(n => listAll(event, n, 400)));
+      const leads = leadGroups.flatMap(g => g.items)
         .sort((a, b) => String(b.receivedAt || '').localeCompare(String(a.receivedAt || '')));
 
-      const customers = (await listAll(event, CUSTOMER_STORE)).map(c => withSchedule(c));
+      const custResult = await listAll(event, CUSTOMER_STORE, 2000);
+      const customers = custResult.items.map(c => withSchedule(c));
       const due = dueList(customers);
+      const truncated = leadGroups.some(g => g.truncated) || custResult.truncated;
 
       return jsonResponse(200, {
         ok: true,
         generatedAt: new Date().toISOString(),
+        truncated,
         counts: {
           leads: leads.length,
           newLeads: leads.filter(l => !l.leadStatus || l.leadStatus === 'new').length,
@@ -107,6 +122,31 @@ exports.handler = async (event) => {
         const updated = completeVisit(rec, visitDate || new Date());
         await store.setJSON(id, updated);
         return jsonResponse(200, { ok: true, record: withSchedule(updated) });
+      }
+
+      // --- turn a won lead into a customer -------------------------------
+      // Previously marking a lead "won" did nothing but change a label, so a
+      // real customer never reached the visit schedule.
+      if (action === 'convert-lead') {
+        const { store: storeName, id, plan, startDate } = body;
+        if (!LEAD_STORES.includes(storeName)) return jsonResponse(400, { error: 'Unknown store' });
+        if (!id) return jsonResponse(400, { error: 'Missing id' });
+
+        const leadStore = openStore(event, storeName);
+        const lead = await leadStore.get(id, { type: 'json' });
+        if (!lead) return jsonResponse(404, { error: 'Lead not found' });
+        if (lead.convertedToCustomer) {
+          return jsonResponse(409, { error: 'This lead has already been converted', customerId: lead.convertedToCustomer });
+        }
+
+        const customer = customerFromLead({ ...lead, _store: storeName, id },
+                                          { plan, startDate, status: 'active' });
+        await openStore(event, CUSTOMER_STORE).setJSON(customer.id, customer);
+        await leadStore.setJSON(id, {
+          ...lead, leadStatus: 'won', leadStatusAt: new Date().toISOString(),
+          convertedToCustomer: customer.id
+        });
+        return jsonResponse(200, { ok: true, record: withSchedule(customer) });
       }
 
       return jsonResponse(400, { error: `Unknown action: ${action}` });
