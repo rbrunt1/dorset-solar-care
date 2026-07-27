@@ -15,6 +15,7 @@
 // See: https://docs.netlify.com/build/data-and-storage/netlify-blobs/
 const { connectLambda, getStore } = require('@netlify/blobs');
 const { sendLeadNotification } = require('./notify');
+const { requestId, describe, describeSource, line } = require('./log');
 
 /**
  * Open a Blobs store from ANY function context.
@@ -111,18 +112,30 @@ async function readAll(store, { limit = DEFAULT_MAX_RECORDS, label = 'store' } =
  */
 async function saveSubmission(event, storeName, prefix, payload) {
   const id = newId(prefix);
+  const rid = requestId(event);
   const record = { id, receivedAt: new Date().toISOString(), ...payload };
 
-  // Log the submission before attempting to store it. If the blob write
-  // fails for any reason, the lead is still recoverable from the function
-  // logs in the Netlify dashboard rather than lost outright.
-  console.log(`[${storeName}] received submission`, JSON.stringify(record));
+  try {
+    connectLambda(event);
+    const store = getStore(storeName);
+    await store.setJSON(id, record);
+  } catch (err) {
+    // The ONE case where the full record is written to the log: the store
+    // rejected it, so this is now the only copy of a real customer's enquiry.
+    // Marked loudly so it can be found and re-entered by hand.
+    console.error(
+      line(storeName, rid, 'STORE_FAILED',
+           `id=${id} error=${JSON.stringify(String(err && err.message || err))}`)
+    );
+    console.error(
+      line(storeName, rid, 'LEAD_RECOVERY',
+           'the write failed, so the full submission follows so it is not lost: ' +
+           JSON.stringify(record))
+    );
+    throw err;
+  }
 
-  connectLambda(event);
-  const store = getStore(storeName);
-  await store.setJSON(id, record);
-
-  console.log(`[${storeName}] stored ${id}`);
+  console.log(line(storeName, rid, 'stored', `id=${id}`));
   return record;
 }
 
@@ -153,12 +166,21 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
     return jsonResponse(405, { error: 'Method not allowed' });
   }
 
+  const rid = requestId(event);
+
   let data;
   try {
     data = JSON.parse(event.body || '{}');
   } catch {
+    console.warn(line(storeName, rid, 'rejected', 'reason=malformed-json'));
     return jsonResponse(400, { error: 'Invalid JSON body' });
   }
+
+  // One line per arrival, describing the shape of the submission without its
+  // contents. This is what tells you "the form is being used" and, when
+  // something is wrong, "the form is posting without an email address".
+  console.log(line(storeName, rid, 'received',
+                   `${describe(data, { expected: required })} ${describeSource(data.source)}`));
 
   // Bot checks, before anything is stored or emailed.
   //
@@ -168,13 +190,13 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
   // operator moves on. Nothing is written and nothing is emailed.
   const spam = looksAutomated(data);
   if (spam) {
-    console.warn(`[${storeName}] discarded a likely automated submission: ${spam}`);
+    console.warn(line(storeName, rid, 'discarded', `reason=${JSON.stringify(spam)}`));
     return jsonResponse(200, { ok: true, id: 'discarded' });
   }
 
   // Structural check, reported loudly on purpose — see cameFromRenderedForm.
   if (!cameFromRenderedForm(data)) {
-    console.warn(`[${storeName}] rejected a submission with no evidence of the rendered form.`);
+    console.warn(line(storeName, rid, 'rejected', 'reason=no-evidence-of-rendered-form'));
     return jsonResponse(400, {
       error: 'This submission did not come from the website form. '
            + 'Please reload the page and try again.'
@@ -186,6 +208,9 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
     return v === undefined || v === null || String(v).trim() === '';
   });
   if (missing.length) {
+    // Worth logging: if real visitors start failing validation, that is a
+    // broken form, and silence would hide it.
+    console.warn(line(storeName, rid, 'rejected', `reason=missing-fields missing=${missing.join(',')}`));
     return jsonResponse(400, {
       error: `Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`
     });
@@ -206,8 +231,7 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
   try {
     record = await saveSubmission(event, storeName, prefix, fields);
   } catch (err) {
-    // Log loudly — this is the path where a real enquiry could be lost.
-    console.error(`[${storeName}] FAILED to store submission:`, err);
+    // saveSubmission has already logged the failure and the recoverable copy.
     return jsonResponse(500, {
       error: 'Could not store submission',
       detail: String(err && err.message ? err.message : err)
@@ -219,6 +243,13 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
   // the lead IS saved, so the visitor must see success even if the email
   // fails. A failed send is logged for someone to pick up.
   const notified = await sendLeadNotification(storeName, record, siteUrl());
+
+  // The closing line for this submission: stored, and whether the owner was
+  // told about it. If notified=false shows up here, the lead is safe but
+  // somebody needs to look at the mail setup.
+  console.log(line(storeName, rid, 'complete',
+                   `id=${record.id} notified=${notified.sent === true}` +
+                   (notified.sent ? '' : ` notifyReason=${notified.reason || 'unknown'}`)));
 
   return jsonResponse(200, { ok: true, id: record.id, notified: notified.sent === true });
 }
