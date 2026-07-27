@@ -157,6 +157,39 @@ If you open the HTML files directly from disk (`file://`), forms fall back to a 
 Without `GOCARDLESS_ACCESS_TOKEN` set, the function returns `{ mock: true }` and the sign-up flow shows a clearly labelled demo banner instead of redirecting to a real bank authorisation page.
 - `GOCARDLESS_WEBHOOK_SECRET` — the signing secret shown when you create the webhook endpoint in GoCardless
 
+### What gets logged
+
+Every form submission writes a traceable set of lines to the Netlify function
+logs, each tagged with the Netlify request id so one submission's lines can be
+pulled together:
+
+```
+[enquiries] rid=01J.. received fields=name,email,postcode chars=142 source=google/cpc
+[enquiries] rid=01J.. stored id=enquiry-1785170075031-a4xose
+[enquiries] rid=01J.. complete id=enquiry-... notified=true
+```
+
+Failures are logged too, with a reason — `missing-fields`, `malformed-json`,
+`no-evidence-of-rendered-form`, `discarded` — so a form that is silently
+failing for real visitors is visible rather than invisible.
+
+**Personal data is deliberately kept out of the logs.** The lines above say
+which fields were supplied, never their values. Netlify's logs sit outside the
+Blobs store the privacy policy describes, are readable by anyone with dashboard
+access, and are retained on Netlify's schedule rather than the business's —
+routinely copying customer names, emails, phone numbers and postcodes into them
+would create a second store of personal data that nobody is managing.
+
+There is exactly **one sanctioned exception**: if the write to Blobs fails, the
+log becomes the only surviving copy of a real enquiry, so the full record is
+written out under a `LEAD_RECOVERY` marker. Search the logs for that string to
+recover a lead by hand. Losing an enquiry outright is worse than a record
+sitting in a log for 24 hours — but that trade is only worth making when
+something has actually gone wrong.
+
+Both properties are covered by tests, including a negative one that fails if a
+customer's details ever appear in a log line on the happy path.
+
 ### Bot protection on the public forms
 
 The enquiry, booking, commercial-quote and area-interest forms carry two
