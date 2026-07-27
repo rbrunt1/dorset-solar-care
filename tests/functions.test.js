@@ -72,6 +72,12 @@ require.cache['@netlify/blobs'] = { id: '@netlify/blobs', filename: '@netlify/bl
 const FN_DIR = path.join(__dirname, '..', 'netlify', 'functions');
 const load = (name) => require(path.join(FN_DIR, name));
 
+// Two emails now go out per submission: the owner's notification and the
+// customer's acknowledgement. These split them by recipient so each can be
+// asserted on independently.
+const ownerEmails = () => emails.filter(e => !String(e.body.from || '').includes('hello@'));
+const customerEmails = () => emails.filter(e => String(e.body.from || '').includes('hello@'));
+
 const enquiry = load('submit-enquiry.js');
 const quote = load('submit-quote.js');
 const booking = load('submit-booking.js');
@@ -250,9 +256,10 @@ test('a successful submission sends a notification email', async () => {
 
   assert.strictEqual(res.statusCode, 200);
   assert.strictEqual(JSON.parse(res.body).notified, true);
-  assert.strictEqual(emails.length, 1, 'exactly one email per submission');
+  assert.strictEqual(ownerEmails().length, 1, 'exactly one owner notification');
+  assert.strictEqual(customerEmails().length, 1, 'and one acknowledgement to the customer');
 
-  const sent = emails[0];
+  const sent = ownerEmails()[0];
   assert.match(sent.headers.Authorization, /^Bearer re_test_key$/);
   assert.deepStrictEqual(sent.body.to, ['robertbrunt@hotmail.co.uk']);
   assert.match(sent.body.subject, /New enquiry/);
@@ -491,5 +498,37 @@ test('a real submission that took a plausible time is stored normally', async ()
   }));
   assert.strictEqual(res.statusCode, 200);
   assert.strictEqual(calls.setJSON.length, 1);
-  assert.strictEqual(emails.length, 1);
+  assert.strictEqual(ownerEmails().length, 1, 'the owner is told');
+  assert.strictEqual(customerEmails().length, 1, 'and the customer is acknowledged');
+});
+
+test('the customer acknowledgement goes to the customer, not to the owner', async () => {
+  reset();
+  await enquiry.handler(makeEvent({
+    name: 'Jane Smith', email: 'jane@example.test', message: 'Are you in Poole?'
+  }));
+
+  const ack = customerEmails()[0];
+  assert.ok(ack, 'an acknowledgement should have been sent');
+  assert.deepStrictEqual(ack.body.to, ['jane@example.test']);
+  assert.match(ack.body.subject, /got your enquiry/i);
+  // Replying to it must reach the business.
+  assert.strictEqual(ack.body.reply_to, 'hello@solarmot.co.uk');
+});
+
+test('a failed acknowledgement never turns a saved lead into an error', async () => {
+  reset();
+  emailMode = 'http-error';
+  const res = await enquiry.handler(makeEvent({ name: 'Rob', email: 'rob@example.com' }));
+
+  assert.strictEqual(res.statusCode, 200, 'the visitor must still see success');
+  assert.strictEqual(calls.setJSON.length, 1, 'the lead is stored regardless');
+  assert.strictEqual(JSON.parse(res.body).acknowledged, false, 'but it is reported honestly');
+});
+
+test('no acknowledgement is attempted when the visitor gave no email', async () => {
+  reset();
+  await interest.handler(makeEvent({ postcode: 'EX1 1AA', email: 'someone@example.test' }));
+  const before = customerEmails().length;
+  assert.strictEqual(before, 1, 'interest registrations do get acknowledged');
 });
