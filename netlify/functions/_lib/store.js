@@ -16,6 +16,7 @@
 const { connectLambda, getStore } = require('@netlify/blobs');
 const { sendLeadNotification } = require('./notify');
 const { requestId, describe, describeSource, line } = require('./log');
+const { sendAcknowledgement } = require('./acknowledge');
 
 /**
  * Open a Blobs store from ANY function context.
@@ -242,16 +243,41 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
   // throws, and we deliberately don't let its result affect the response:
   // the lead IS saved, so the visitor must see success even if the email
   // fails. A failed send is logged for someone to pick up.
-  const notified = await sendLeadNotification(storeName, record, siteUrl());
+  // Tell the owner, and acknowledge to the customer. Run together rather than
+  // one after the other so a slow send doesn't add to the visitor's wait.
+  //
+  // Neither can fail the request: the lead is already stored. The owner's
+  // notification is the one that matters operationally, so its outcome is what
+  // the response reports; a failed acknowledgement is logged for someone to
+  // look at, but the visitor has still been served.
+  const [notified, acknowledged] = await Promise.all([
+    sendLeadNotification(storeName, record, siteUrl()),
+    sendAcknowledgement(storeName, record)
+  ]);
+
+  if (acknowledged.sent) {
+    console.log(line(storeName, rid, 'acknowledged', `id=${record.id}`));
+  } else if (!acknowledged.skipped) {
+    console.error(line(storeName, rid, 'ACK_FAILED',
+                       `id=${record.id} reason=${acknowledged.reason || 'unknown'}` +
+                       (acknowledged.detail ? ` detail=${acknowledged.detail}` : '')));
+  } else {
+    console.log(line(storeName, rid, 'ack-skipped', `id=${record.id} reason=${acknowledged.reason}`));
+  }
 
   // The closing line for this submission: stored, and whether the owner was
   // told about it. If notified=false shows up here, the lead is safe but
   // somebody needs to look at the mail setup.
   console.log(line(storeName, rid, 'complete',
                    `id=${record.id} notified=${notified.sent === true}` +
-                   (notified.sent ? '' : ` notifyReason=${notified.reason || 'unknown'}`)));
+                   (notified.sent ? '' : ` notifyReason=${notified.reason || 'unknown'}`) +
+                   ` acknowledged=${acknowledged.sent === true}`));
 
-  return jsonResponse(200, { ok: true, id: record.id, notified: notified.sent === true });
+  return jsonResponse(200, {
+    ok: true, id: record.id,
+    notified: notified.sent === true,
+    acknowledged: acknowledged.sent === true
+  });
 }
 
 /**
