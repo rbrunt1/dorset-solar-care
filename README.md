@@ -157,6 +157,38 @@ If you open the HTML files directly from disk (`file://`), forms fall back to a 
 Without `GOCARDLESS_ACCESS_TOKEN` set, the function returns `{ mock: true }` and the sign-up flow shows a clearly labelled demo banner instead of redirecting to a real bank authorisation page.
 - `GOCARDLESS_WEBHOOK_SECRET` — the signing secret shown when you create the webhook endpoint in GoCardless
 
+### Emails sent per submission
+
+Two, in parallel:
+
+1. **To the owner** — the lead notification, to `LEAD_NOTIFICATION_TO`
+   (currently `hello@solarmot.co.uk` and the Hotmail address). `reply_to` is the
+   customer, so hitting Reply goes straight to them.
+2. **To the customer** — an automatic acknowledgement, from
+   `hello@solarmot.co.uk`, with `reply_to` set to the same. Each form type has
+   its own copy, and it reflects their details back so they can see the message
+   arrived intact.
+
+Neither can fail a submission — the lead is already stored by the time either
+runs. The response reports `notified` and `acknowledged` honestly rather than
+claiming success.
+
+The acknowledgement deliberately **does not send** when: there is no usable
+email address, the address is our own (no self-sent mail), the form type has no
+template, or `SEND_CUSTOMER_ACKNOWLEDGEMENT=false`. That last one is a kill
+switch — set it if auto-replies ever need stopping in a hurry without a deploy.
+
+The booking acknowledgement is careful to call itself a **request**, not a
+confirmed appointment, since nothing has actually been confirmed at that point.
+
+**On deliverability:** Microsoft (Outlook/Hotmail/Live/Office 365) is the
+strictest of the big providers toward new sending domains, and tends to accept
+mail and file it in Junk rather than reject it — so a sending service reports
+"Delivered" while the recipient sees nothing. Some acknowledgements to Microsoft
+addresses will land in Junk initially. This improves as the domain builds
+reputation; the DMARC record is in place, the content is plain rather than
+marketing-styled, and volume is low and steady, which are the things that help.
+
 ### What gets logged
 
 Every form submission writes a traceable set of lines to the Netlify function
