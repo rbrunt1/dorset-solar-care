@@ -157,6 +157,40 @@ If you open the HTML files directly from disk (`file://`), forms fall back to a 
 Without `GOCARDLESS_ACCESS_TOKEN` set, the function returns `{ mock: true }` and the sign-up flow shows a clearly labelled demo banner instead of redirecting to a real bank authorisation page.
 - `GOCARDLESS_WEBHOOK_SECRET` — the signing secret shown when you create the webhook endpoint in GoCardless
 
+### Announcing a new area
+
+When someone checks a postcode outside the coverage area, they can register to
+be told when it's covered. The admin page's **Waiting list** tab groups those
+registrations by postcode area, sorted by how many are still waiting — so it
+doubles as a demand signal for deciding where to expand next.
+
+Announcing an area is **two deliberate steps**, because bulk email cannot be
+undone:
+
+1. **Preview** (`preview-area-notification`) — read-only. Shows exactly who
+   would be emailed and who would be skipped and why. Nothing sends.
+2. **Send** (`notify-area`) — requires `confirm: true`. Without it the endpoint
+   refuses, so a stray or mistyped request can't mail your waiting list.
+
+Safety properties, all covered by tests:
+
+- **Nobody is emailed twice.** Each record is marked `notifiedAt` /
+  `notifiedForArea` the moment its own send succeeds, and marked records are
+  excluded from future runs. Re-running an announcement sends nothing.
+- **Marked immediately, not at the end.** If the function dies half way, the
+  people already emailed are already recorded — so a re-run continues rather
+  than starting over.
+- **A failed send leaves that person un-notified**, so a retry picks them up.
+- **Emailed-but-not-recorded is reported as a failure**, not a success. It's the
+  one case that could double-send, so it's flagged loudly rather than hidden.
+- Sent in batches of 10 with a pause, to stay inside rate limits and the
+  function timeout.
+
+**On content:** the acknowledgement these people received promised "we won't
+email you about anything else". The announcement therefore says the area is
+covered, links to pricing, and stops. No offers, no newsletter. That restraint
+is also what keeps it a solicited message they asked for rather than marketing.
+
 ### Emails sent per submission
 
 Two, in parallel:

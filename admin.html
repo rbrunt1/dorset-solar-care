@@ -64,6 +64,7 @@
       <button class="admin-tab is-active" data-tab="due">Visits due</button>
       <button class="admin-tab" data-tab="leads">Leads</button>
       <button class="admin-tab" data-tab="customers">Customers</button>
+        <button class="admin-tab" data-tab="areas">Waiting list</button>
     </div>
 
     <!-- DUE -->
@@ -124,6 +125,32 @@
           <thead><tr><th>Name</th><th>Plan</th><th>Started</th><th>Last visit</th><th>Next due</th><th>Visits</th></tr></thead>
           <tbody id="customer-rows"></tbody>
         </table>
+      </div>
+
+      <div class="admin-panel" data-panel="areas">
+        <p class="text-muted text-sm" style="margin:0 0 14px;">
+          People who checked a postcode we don't cover yet and asked to be told when we do.
+          Sorted by how many are still waiting, so the top row is where demand is strongest.
+        </p>
+
+        <table class="admin-table">
+          <thead><tr><th>Area</th><th>Waiting</th><th>Already told</th><th>Total</th><th></th></tr></thead>
+          <tbody id="area-rows"></tbody>
+        </table>
+        <p class="text-muted text-sm" id="areas-empty" style="display:none;">
+          Nobody has registered interest yet.
+        </p>
+
+        <div id="area-preview" style="display:none;margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:10px;">
+          <h3 style="margin:0 0 6px;font-size:16px;" id="area-preview-title"></h3>
+          <p class="text-muted text-sm" id="area-preview-summary" style="margin:0 0 12px;"></p>
+          <div id="area-preview-list" style="max-height:220px;overflow:auto;font-size:13px;margin-bottom:14px;"></div>
+          <p class="text-sm" style="margin:0 0 12px;color:var(--amber-600);">
+            This sends a real email to each person listed. It cannot be undone.
+          </p>
+          <button class="btn btn-primary btn-sm" id="area-send">Send it</button>
+          <button class="btn btn-ghost btn-sm" id="area-cancel">Cancel</button>
+        </div>
       </div>
     </div>
   </section>
