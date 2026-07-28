@@ -52,7 +52,7 @@ const STORE_LABELS = {
   enquiries: 'Enquiry',
   'commercial-quotes': 'Commercial quote',
   bookings: 'Booking request',
-  interest: 'Area interest'
+  'interest-registrations': 'Area interest'
 };
 const LEAD_STATUSES = ['new', 'contacted', 'quoted', 'won', 'lost'];
 
@@ -140,6 +140,22 @@ function renderCustomers(customers) {
   </tr>`).join('');
 }
 
+function renderAreas(areas) {
+  const tbody = $('area-rows');
+  const empty = $('areas-empty');
+  if (!tbody) return;
+  empty.style.display = areas && areas.length ? 'none' : 'block';
+  tbody.innerHTML = (areas || []).map(a => `<tr>
+    <td><strong>${esc(a.prefix)}</strong></td>
+    <td>${esc(a.waiting)}</td>
+    <td class="text-muted">${esc(a.notified)}</td>
+    <td class="text-muted">${esc(a.total)}</td>
+    <td>${a.waiting > 0 && a.prefix !== 'Unknown'
+      ? `<button class="btn btn-secondary btn-sm" data-area="${esc(a.prefix)}">We cover this now</button>`
+      : ''}</td>
+  </tr>`).join('');
+}
+
 function render(data) {
   DATA = data;
   const t = $('admin-truncated');
@@ -148,6 +164,7 @@ function render(data) {
   renderDue(data.due);
   renderLeads(data.leads);
   renderCustomers(data.customers);
+  renderAreas(data.areas);
   $('admin-generated').textContent = 'Updated ' + new Date(data.generatedAt)
     .toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
@@ -272,6 +289,66 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       alert('Could not save: ' + err.message);
       btn.disabled = false;
+    }
+  });
+
+  // ---- announcing a new area ------------------------------------------
+  // Two deliberate steps: preview, then confirm. Nothing sends from the first
+  // click, because a bulk email cannot be taken back.
+  let pendingArea = null;
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-area]');
+    if (!btn) return;
+    const prefix = btn.dataset.area;
+    btn.disabled = true;
+    try {
+      const p = await api('POST', { action: 'preview-area-notification', prefix });
+      pendingArea = p.prefix;
+
+      $('area-preview-title').textContent = `Announce ${p.prefix}`;
+      $('area-preview-summary').textContent =
+        `${p.willSendCount} ${p.willSendCount === 1 ? 'person' : 'people'} will be emailed.` +
+        (p.skipped.length ? ` ${p.skipped.length} skipped (already told, or no usable address).` : '');
+      $('area-preview-list').innerHTML = p.willSend.length
+        ? p.willSend.map(r =>
+            `<div>${esc(r.name || '—')} &middot; ${esc(r.email)} &middot; ${esc(r.postcode || '')}</div>`).join('')
+        : '<div class="text-muted">Nobody new to email.</div>';
+      $('area-send').disabled = p.willSendCount === 0;
+      $('area-preview').style.display = 'block';
+      $('area-preview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (err) {
+      alert('Could not build the preview: ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('area-cancel').addEventListener('click', () => {
+    pendingArea = null;
+    $('area-preview').style.display = 'none';
+  });
+
+  $('area-send').addEventListener('click', async () => {
+    if (!pendingArea) return;
+    if (!confirm(`Email everyone waiting in ${pendingArea}? This cannot be undone.`)) return;
+    const btn = $('area-send');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const r = await api('POST', { action: 'notify-area', prefix: pendingArea, confirm: true });
+      let msg = `Sent to ${r.sent.length}.`;
+      if (r.failed.length) msg += ` ${r.failed.length} failed — check the function logs.`;
+      if (r.skipped.length) msg += ` ${r.skipped.length} skipped.`;
+      alert(msg);
+      pendingArea = null;
+      $('area-preview').style.display = 'none';
+      await load();
+    } catch (err) {
+      alert('Send failed: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send it';
     }
   });
 
