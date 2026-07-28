@@ -8,8 +8,14 @@ const { jsonResponse, openStore, readAll } = require('./_lib/store');
 const { checkAdminAuth } = require('./_lib/auth');
 const { checkRateLimit, recordFailure, clearFailures, hasClientHeader } = require('./_lib/ratelimit');
 const { withSchedule, dueList, completeVisit, nextDueDate, customerFromLead } = require('./_lib/schedule');
+const { groupByArea, selectRecipients, notifyArea } = require('./_lib/areas');
 
-const LEAD_STORES = ['enquiries', 'commercial-quotes', 'bookings', 'interest'];
+// These MUST match the storeName each endpoint writes to. They drifted once:
+// the admin page read 'interest' while register-interest.js wrote to
+// 'interest-registrations', so every area registration was invisible in the
+// dashboard AND missing from the backup export, silently.
+const LEAD_STORES = ['enquiries', 'commercial-quotes', 'bookings', 'interest-registrations'];
+const INTEREST_STORE = 'interest-registrations';
 const CUSTOMER_STORE = 'customers';
 
 async function listAll(event, storeName, limit) {
@@ -87,10 +93,15 @@ exports.handler = async (event) => {
       const due = dueList(customers);
       const truncated = leadGroups.some(g => g.truncated) || custResult.truncated;
 
+      // Where the waiting list is concentrated — the answer to "which area next".
+      const interest = leads.filter(l => l._store === INTEREST_STORE);
+      const areas = groupByArea(interest);
+
       return jsonResponse(200, {
         ok: true,
         generatedAt: new Date().toISOString(),
         truncated,
+        areas,
         counts: {
           leads: leads.length,
           newLeads: leads.filter(l => !l.leadStatus || l.leadStatus === 'new').length,
@@ -180,6 +191,59 @@ exports.handler = async (event) => {
           convertedToCustomer: customer.id
         });
         return jsonResponse(200, { ok: true, record: withSchedule(customer) });
+      }
+
+      // --- who WOULD be emailed if we announced this area ----------------
+      // Read-only on purpose. Nothing sends from this call, so the admin page
+      // can show the count and the addresses before anything is committed.
+      if (action === 'preview-area-notification') {
+        const { prefix } = body;
+        if (!prefix || !/^[A-Za-z]{1,2}$/.test(String(prefix).trim())) {
+          return jsonResponse(400, { error: 'Give a postcode area like SO or TA' });
+        }
+        const { items } = await listAll(event, INTEREST_STORE, 5000);
+        const preview = selectRecipients(items, prefix);
+        return jsonResponse(200, {
+          ok: true,
+          prefix: preview.prefix,
+          willSendCount: preview.willSend.length,
+          willSend: preview.willSend.map(r => ({
+            id: r.id, name: r.name || null, email: r.email, postcode: r.postcode || null
+          })),
+          skipped: preview.skipped
+        });
+      }
+
+      // --- actually announce the area ------------------------------------
+      // Requires confirm:true, so this can never be reached by a stray request
+      // or a mistyped action. Bulk email cannot be undone.
+      if (action === 'notify-area') {
+        const { prefix, confirm } = body;
+        if (!prefix || !/^[A-Za-z]{1,2}$/.test(String(prefix).trim())) {
+          return jsonResponse(400, { error: 'Give a postcode area like SO or TA' });
+        }
+        if (confirm !== true) {
+          return jsonResponse(400, {
+            error: 'Refusing to send without explicit confirmation. Preview first.'
+          });
+        }
+        if (!process.env.RESEND_API_KEY) {
+          return jsonResponse(503, { error: 'Email is not configured (RESEND_API_KEY missing).' });
+        }
+
+        const { items } = await listAll(event, INTEREST_STORE, 5000);
+        const store = openStore(event, INTEREST_STORE);
+        const result = await notifyArea(
+          { store, apiKey: process.env.RESEND_API_KEY }, items, prefix
+        );
+
+        console.log(`[admin] area notification for ${result.prefix}: ` +
+                    `${result.sent.length} sent, ${result.failed.length} failed, ` +
+                    `${result.skipped.length} skipped`);
+        for (const f of result.failed) {
+          console.error(`[admin] area notify FAILED for ${f.id}: ${f.reason}`);
+        }
+        return jsonResponse(200, { ok: true, ...result });
       }
 
       return jsonResponse(400, { error: `Unknown action: ${action}` });
