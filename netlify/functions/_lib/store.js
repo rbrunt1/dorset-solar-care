@@ -17,6 +17,8 @@ const { connectLambda, getStore } = require('@netlify/blobs');
 const { sendLeadNotification } = require('./notify');
 const { requestId, describe, describeSource, line } = require('./log');
 const { sendAcknowledgement } = require('./acknowledge');
+const { isOversized, capFields, MAX_BODY_BYTES, bodyBytes } = require('./limits');
+const { checkSubmissionLimit, mayAcknowledge } = require('./publiclimit');
 
 /**
  * Open a Blobs store from ANY function context.
@@ -169,6 +171,14 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
 
   const rid = requestId(event);
 
+  // Cheapest check first: refuse an absurd body before spending memory parsing
+  // it. A live probe confirmed 5 MB bodies previously reached this point.
+  if (isOversized(event.body)) {
+    console.warn(line(storeName, rid, 'rejected',
+                      `reason=body-too-large bytes=${bodyBytes(event.body)} max=${MAX_BODY_BYTES}`));
+    return jsonResponse(413, { error: 'That message is too long. Please shorten it and try again.' });
+  }
+
   let data;
   try {
     data = JSON.parse(event.body || '{}');
@@ -204,6 +214,18 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
     });
   }
 
+  // Sustained flooding from one address. Deliberately generous — this is a
+  // contact form used by strangers, so a false positive costs a customer.
+  const flood = await checkSubmissionLimit(openStore, event);
+  if (flood.limited) {
+    console.warn(line(storeName, rid, 'rejected', 'reason=too-many-submissions'));
+    return {
+      statusCode: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': String(flood.retryAfterSec) },
+      body: JSON.stringify({ error: 'Too many submissions from this connection. Please try again later.' })
+    };
+  }
+
   const missing = required.filter(f => {
     const v = data[f];
     return v === undefined || v === null || String(v).trim() === '';
@@ -222,7 +244,12 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
   // separately from the customer's own fields so it can never collide with
   // one, and it is deliberately NOT part of `required` — a missing source
   // must never block a real lead.
-  const fields = { ...build(data), source: cleanSource(data.source) };
+  const capped = capFields(build(data));
+  if (capped.truncated.length) {
+    // Worth knowing: a customer's message may have been cut short.
+    console.warn(line(storeName, rid, 'truncated', `fields=${capped.truncated.join(',')}`));
+  }
+  const fields = { ...capped.fields, source: cleanSource(data.source) };
   // The trap fields are plumbing, not customer data. Drop them so they never
   // appear in a stored record, an export, or a notification email.
   delete fields[HONEYPOT_FIELD];
@@ -250,9 +277,17 @@ async function handleSubmission(event, { storeName, prefix, required = [], build
   // notification is the one that matters operationally, so its outcome is what
   // the response reports; a failed acknowledgement is logged for someone to
   // look at, but the visitor has still been served.
+  // The acknowledgement goes to an address the SUBMITTER chose, so it is the
+  // one outbound message a stranger can aim at somebody else. Capped per
+  // address per day. Hitting the cap suppresses only the email — the lead is
+  // still stored and the owner still notified.
+  const ackAllowed = await mayAcknowledge(openStore, event, record.email);
+
   const [notified, acknowledged] = await Promise.all([
     sendLeadNotification(storeName, record, siteUrl()),
-    sendAcknowledgement(storeName, record)
+    ackAllowed.allowed
+      ? sendAcknowledgement(storeName, record)
+      : Promise.resolve({ sent: false, skipped: true, reason: ackAllowed.reason })
   ]);
 
   if (acknowledged.sent) {
