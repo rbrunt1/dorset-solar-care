@@ -123,9 +123,14 @@ test('the original bug: connectLambda is called with the event before getStore',
   const res = await enquiry.handler(makeEvent({ name: 'Rob', email: 'rob@example.com' }));
 
   assert.strictEqual(res.statusCode, 200);
-  assert.strictEqual(calls.connectLambda.length, 1, 'connectLambda must be called');
-  assert.ok(calls.connectLambda[0].blobs, 'must receive the event carrying .blobs');
-  assert.deepStrictEqual(calls.getStore, ['enquiries']);
+  // The abuse limiters also open a store, so this is now called more than once
+  // per submission. What matters is that it IS called, and always with the event
+  // that carries Netlify's Blobs credentials — omitting that was the original bug.
+  assert.ok(calls.connectLambda.length >= 1, 'connectLambda must be called');
+  for (const ev of calls.connectLambda) {
+    assert.ok(ev.blobs, 'every call must receive the event carrying .blobs');
+  }
+  assert.ok(calls.getStore.includes('enquiries'), 'the lead store must be opened');
 });
 
 test('a storage failure returns 500, never a false success', async () => {
@@ -147,8 +152,9 @@ test('submitted fields are persisted with an id and timestamp', async () => {
   }));
 
   assert.strictEqual(res.statusCode, 200);
-  assert.strictEqual(calls.setJSON.length, 1);
-  const { key, value } = calls.setJSON[0];
+  const leadWrite = calls.setJSON.find(c => c.store === 'enquiries');
+  assert.ok(leadWrite, 'the enquiry must be stored');
+  const { key, value } = leadWrite;
   assert.match(key, /^enquiry-\d+-[a-z0-9]+$/);
   assert.strictEqual(value.name, 'Rob Brunt');
   assert.strictEqual(value.email, 'rob@example.com');
@@ -196,8 +202,9 @@ test('quote requests validate company, contact and email', async () => {
     systemSize: '50', serviceLevel: 'full'
   }));
   assert.strictEqual(ok.statusCode, 200);
-  assert.deepStrictEqual(calls.getStore, ['commercial-quotes']);
-  assert.strictEqual(calls.setJSON[0].value.systemSize, '50');
+  assert.ok(calls.getStore.includes('commercial-quotes'));
+  const quoteWrite = calls.setJSON.find(c => c.store === 'commercial-quotes');
+  assert.strictEqual(quoteWrite.value.systemSize, '50');
 });
 
 test('bookings require a date and slot, and record them as requested', async () => {
@@ -228,9 +235,10 @@ test('interest registrations need only an email and keep the coverage status', a
     email: 'someone@example.test', postcode: 'EX1 1AA', coverageStatus: 'soon'
   }));
   assert.strictEqual(ok.statusCode, 200);
-  assert.deepStrictEqual(calls.getStore, ['interest-registrations']);
-  assert.strictEqual(calls.setJSON[0].value.coverageStatus, 'soon');
-  assert.strictEqual(calls.setJSON[0].value.name, null, 'optional name defaults to null');
+  assert.ok(calls.getStore.includes('interest-registrations'));
+  const regWrite = calls.setJSON.find(c => c.store === 'interest-registrations');
+  assert.strictEqual(regWrite.value.coverageStatus, 'soon');
+  assert.strictEqual(regWrite.value.name, null, 'optional name defaults to null');
 });
 
 test('every endpoint returns JSON content-type', async () => {
@@ -279,7 +287,7 @@ test('a Resend HTTP error still returns 200 and keeps the stored lead', async ()
   assert.strictEqual(res.statusCode, 200, 'a failed email must NOT fail the submission');
   assert.strictEqual(JSON.parse(res.body).ok, true);
   assert.strictEqual(JSON.parse(res.body).notified, false, 'but it must report the email did not send');
-  assert.strictEqual(calls.setJSON.length, 1, 'the lead is still stored');
+  assert.ok(calls.setJSON.some(c => c.store === 'enquiries'), 'the lead is still stored');
 });
 
 test('a network failure talking to Resend still returns 200', async () => {
@@ -287,7 +295,7 @@ test('a network failure talking to Resend still returns 200', async () => {
   emailMode = 'network-error';
   const res = await enquiry.handler(makeEvent({ name: 'Rob', email: 'rob@example.com' }));
   assert.strictEqual(res.statusCode, 200);
-  assert.strictEqual(calls.setJSON.length, 1);
+  assert.ok(calls.setJSON.some(c => c.store === 'enquiries'));
   assert.strictEqual(JSON.parse(res.body).notified, false);
 });
 
@@ -309,7 +317,7 @@ test('with no API key, submissions still succeed and no email is attempted', asy
   const res = await enquiry.handler(makeEvent({ name: 'Rob', email: 'rob@example.com' }));
 
   assert.strictEqual(res.statusCode, 200);
-  assert.strictEqual(calls.setJSON.length, 1, 'lead still stored without a key');
+  assert.ok(calls.setJSON.some(c => c.store === 'enquiries'), 'lead still stored without a key');
   assert.strictEqual(emails.length, 0, 'no outbound call without a key');
   assert.strictEqual(JSON.parse(res.body).notified, false);
 });
@@ -390,7 +398,7 @@ test('attribution is stored alongside the lead and reaches the email', async () 
   }));
 
   assert.strictEqual(res.statusCode, 200);
-  const stored = calls.setJSON[0].value;
+  const stored = calls.setJSON.find(c => c.store === 'enquiries').value;
   assert.strictEqual(stored.source.utmSource, 'google');
   assert.strictEqual(stored.source.landingPage, '/pricing');
   // and it must be legible in the notification, not "[object Object]"
@@ -404,7 +412,7 @@ test('a missing source never blocks a lead', async () => {
   reset();
   const res = await enquiry.handler(makeEvent({ name: 'Rob', email: 'rob@example.com' }));
   assert.strictEqual(res.statusCode, 200);
-  assert.strictEqual(calls.setJSON[0].value.source, null);
+  assert.strictEqual(calls.setJSON.find(c => c.store === 'enquiries').value.source, null);
 });
 
 test('hostile or junk source values are rejected, not stored', async () => {
@@ -432,7 +440,7 @@ test('a form field cannot overwrite the attribution object', async () => {
     name: 'Rob', email: 'rob@example.com', source: 'not-an-object'
   }));
   assert.strictEqual(res.statusCode, 200);
-  assert.strictEqual(calls.setJSON[0].value.source, null);
+  assert.strictEqual(calls.setJSON.find(c => c.store === 'enquiries').value.source, null);
 });
 
 
@@ -450,7 +458,7 @@ test('a direct API POST with no trap fields is rejected and nothing is stored', 
     { name: 'Bot', email: 'bot@example.com' }, 'POST', { omitTraps: true }
   ));
   assert.strictEqual(res.statusCode, 400, 'a request that never rendered the form must be refused');
-  assert.strictEqual(calls.setJSON.length, 0, 'nothing stored');
+  assert.ok(!calls.setJSON.some(c => c.store === 'enquiries'), 'nothing stored');
   assert.strictEqual(emails.length, 0, 'nothing emailed');
 });
 
@@ -462,7 +470,7 @@ test('a filled honeypot is discarded silently, with a fake success', async () =>
   // A fake 200 on purpose: an error tells the bot's author how to fix it.
   assert.strictEqual(res.statusCode, 200);
   assert.strictEqual(JSON.parse(res.body).id, 'discarded');
-  assert.strictEqual(calls.setJSON.length, 0, 'nothing stored');
+  assert.ok(!calls.setJSON.some(c => c.store === 'enquiries'), 'nothing stored');
   assert.strictEqual(emails.length, 0, 'nothing emailed');
 });
 
@@ -473,7 +481,7 @@ test('an impossibly fast submission is discarded silently', async () => {
   }));
   assert.strictEqual(res.statusCode, 200);
   assert.strictEqual(JSON.parse(res.body).id, 'discarded');
-  assert.strictEqual(calls.setJSON.length, 0);
+  assert.ok(!calls.setJSON.some(c => c.store === 'enquiries'));
   assert.strictEqual(emails.length, 0);
 });
 
@@ -484,7 +492,7 @@ test('the trap fields never reach the stored record or the email', async () => {
   }));
   assert.strictEqual(res.statusCode, 200);
 
-  const stored = calls.setJSON[0].value;
+  const stored = calls.setJSON.find(c => c.store === 'enquiries').value;
   assert.ok(!(HONEYPOT in stored), 'honeypot must not be stored as customer data');
   assert.ok(!('_fillMs' in stored), 'timing must not be stored as customer data');
   assert.ok(!emails[0].body.text.includes('_fillMs'), 'plumbing must not appear in the email');
@@ -497,7 +505,7 @@ test('a real submission that took a plausible time is stored normally', async ()
     name: 'Rob Brunt', email: 'rob@example.com', _fillMs: 18000
   }));
   assert.strictEqual(res.statusCode, 200);
-  assert.strictEqual(calls.setJSON.length, 1);
+  assert.ok(calls.setJSON.some(c => c.store === 'enquiries'));
   assert.strictEqual(ownerEmails().length, 1, 'the owner is told');
   assert.strictEqual(customerEmails().length, 1, 'and the customer is acknowledged');
 });
