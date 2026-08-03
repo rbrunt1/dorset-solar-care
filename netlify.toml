@@ -14,3 +14,46 @@
 # list is in the inbox rather than waiting in a dashboard nobody opens.
 [functions."weekly-schedule"]
   schedule = "0 7 * * 1"
+
+# ---------------------------------------------------------------------------
+# Security headers.
+#
+# The live site previously sent none of these. Netlify adds HSTS on its own but
+# nothing else, so there was no CSP, no framing protection and no MIME-sniffing
+# protection on any page — including /admin.
+#
+# The CSP is written to match what the site actually does rather than being
+# copied from a template:
+#   - 'unsafe-inline' for script-src is required because several pages carry
+#     inline <script> blocks (contact.html, pricing.html, booking.html) and the
+#     JSON-LD structured data. Removing it would mean moving that code into
+#     files, which is worth doing later but is a bigger change than this.
+#   - style-src allows inline because the admin page sets styles inline.
+#   - connect-src is limited to 'self': the front end only ever calls /api/*.
+#   - frame-ancestors 'none' is the real prize here — it stops /admin being
+#     framed and your clicks hijacked, and it is not bypassable the way
+#     X-Frame-Options can be.
+# ---------------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+
+# The admin page holds customer records. Keep it out of search engines and out
+# of any cache that isn't the browser's own.
+[[headers]]
+  for = "/admin"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/admin.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Cache-Control = "no-store"
