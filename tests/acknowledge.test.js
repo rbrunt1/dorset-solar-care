@@ -222,6 +222,66 @@ const ENQUIRY = {
     assert.ok(!looksLikeEmail(null));
   });
 
+
+  // ---- reservations -------------------------------------------------------
+  // A reservation is the only form where money changes hands, so the auto-reply
+  // has to carry the refund terms in writing. The reserve page promises "a
+  // confirmation email is on its way"; these tests are what stop that being a
+  // lie.
+  await test('a reservation gets an acknowledgement at all', () => {
+    const built = buildAcknowledgement('reservations', {
+      name: 'Jane Smith', email: 'jane@example.com',
+      address1: '12 Elm Road', postcode: 'BH12 1AA', preferredMonth: '2026-10'
+    });
+    assert.ok(built, 'the reserve page promises this email — it must exist');
+    assert.match(built.subject, /reserved/i);
+  });
+
+  await test('the reservation reply states the deposit is refundable and comes off month one', () => {
+    const built = buildAcknowledgement('reservations', { name: 'Jane', email: 'jane@example.com' });
+    assert.match(built.text, /refundable/i);
+    assert.match(built.text, /comes off your first month/i);
+    assert.match(built.html, /refundable/i);
+  });
+
+  await test('reads the month back as English, not as a database value', () => {
+    const built = buildAcknowledgement('reservations', {
+      name: 'Jane', email: 'jane@example.com', preferredMonth: '2026-10'
+    });
+    assert.match(built.text, /October 2026/);
+    assert.ok(!built.text.includes('2026-10'), 'raw 2026-10 should not reach the customer');
+  });
+
+  await test('does not read back "Undecided" as if it were a plan', () => {
+    const built = buildAcknowledgement('reservations', {
+      name: 'Jane', email: 'jane@example.com', plan: 'undecided'
+    });
+    assert.ok(!/Undecided/i.test(built.text), 'an undecided plan is not a plan');
+  });
+
+  await test('reflects a chosen plan back when there is one', () => {
+    const built = buildAcknowledgement('reservations', {
+      name: 'Jane', email: 'jane@example.com', plan: 'standard'
+    });
+    assert.match(built.text, /Plan: Standard/);
+  });
+
+  await test('echoes the address so the customer can check we have it right', () => {
+    const built = buildAcknowledgement('reservations', {
+      name: 'Jane', email: 'jane@example.com', address1: '12 Elm Road', postcode: 'BH12 1AA'
+    });
+    assert.match(built.text, /12 Elm Road/);
+    assert.match(built.text, /BH12 1AA/);
+  });
+
+  await test('a nonsense month falls back to showing it rather than crashing', () => {
+    const built = buildAcknowledgement('reservations', {
+      name: 'Jane', email: 'jane@example.com', preferredMonth: 'not-a-month'
+    });
+    assert.ok(built);
+    assert.match(built.text, /not-a-month/);
+  });
+
   real(`\n  ${passed} passed, ${failed} failed`);
   process.exit(failed ? 1 : 0);
 })();

@@ -60,17 +60,39 @@ const TYPES = {
     subject: 'You\'re on the list — SolarMOT',
     opening: 'Thanks for registering your interest.',
     next: 'We\'re not covering your postcode yet, but you\'ll be the first to know when we do. We won\'t email you about anything else.'
+  },
+  // Money has changed hands here, so this one carries more weight than the
+  // others. It has to state plainly that the deposit is refundable and that it
+  // comes off the first month — someone who sees an unfamiliar name on their
+  // statement and can't find that in writing raises a chargeback.
+  reservations: {
+    subject: 'Your October slot is reserved — SolarMOT',
+    opening: 'Thanks for reserving an October slot.',
+    next: 'We\'ll be in touch to agree a date once we\'re scheduling your area. '
+        + 'Your £25 deposit comes off your first month — it isn\'t an extra charge — and it\'s '
+        + 'fully refundable if you change your mind. Just reply to this email and we\'ll return it.'
   }
 };
 
 /** The fields worth reflecting back, in a sensible reading order. */
 const ECHO_FIELDS = [
   ['name', 'Name'], ['company', 'Company'], ['contact', 'Contact'],
-  ['postcode', 'Postcode'], ['email', 'Email'], ['phone', 'Phone'],
+  ['address1', 'Address'], ['postcode', 'Postcode'],
+  ['email', 'Email'], ['phone', 'Phone'],
   ['plan', 'Plan'], ['systemSize', 'System size'],
+  ['preferredMonth', 'Preferred month'],
   ['requestedDate', 'Preferred date'], ['requestedSlot', 'Preferred time'],
   ['message', 'Your message']
 ];
+
+/** '2026-10' reads as a database value. 'October 2026' reads as an answer. */
+function friendlyMonth(value) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(value));
+  if (!m) return String(value);
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1));
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
 
 function friendlyDate(value) {
   const d = new Date(value);
@@ -86,7 +108,12 @@ function summarise(record) {
     let v = record[key];
     if (v === undefined || v === null || String(v).trim() === '') continue;
     if (key === 'requestedDate') v = friendlyDate(v);
-    if (key === 'plan') v = String(v).charAt(0).toUpperCase() + String(v).slice(1);
+    if (key === 'preferredMonth') v = friendlyMonth(v);
+    // 'undecided' is a form value, not something to read back as a plan name.
+    if (key === 'plan') {
+      if (String(v).toLowerCase() === 'undecided') continue;
+      v = String(v).charAt(0).toUpperCase() + String(v).slice(1);
+    }
     rows.push([label, String(v)]);
   }
   return rows;
