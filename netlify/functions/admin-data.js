@@ -14,8 +14,9 @@ const { groupByArea, selectRecipients, notifyArea } = require('./_lib/areas');
 // the admin page read 'interest' while register-interest.js wrote to
 // 'interest-registrations', so every area registration was invisible in the
 // dashboard AND missing from the backup export, silently.
-const LEAD_STORES = ['enquiries', 'commercial-quotes', 'bookings', 'interest-registrations'];
+const LEAD_STORES = ['enquiries', 'commercial-quotes', 'bookings', 'interest-registrations', 'reservations'];
 const INTEREST_STORE = 'interest-registrations';
+const RESERVATION_STORE = 'reservations';
 const CUSTOMER_STORE = 'customers';
 
 async function listAll(event, storeName, limit) {
@@ -97,6 +98,13 @@ exports.handler = async (event) => {
       const interest = leads.filter(l => l._store === INTEREST_STORE);
       const areas = groupByArea(interest);
 
+      // The whole point of charging a deposit is to separate people who said
+      // they were interested from people who actually paid. That distinction is
+      // worthless if the dashboard shows them as one undifferentiated list.
+      const reservations = leads.filter(l => l._store === RESERVATION_STORE);
+      const paid = reservations.filter(r => r.depositStatus === 'paid');
+      const depositsPence = paid.reduce((n, r) => n + (Number(r.depositAmount) || 0), 0);
+
       return jsonResponse(200, {
         ok: true,
         generatedAt: new Date().toISOString(),
@@ -107,7 +115,13 @@ exports.handler = async (event) => {
           newLeads: leads.filter(l => !l.leadStatus || l.leadStatus === 'new').length,
           customers: customers.filter(c => c.status !== 'cancelled').length,
           due: due.length,
-          overdue: due.filter(c => c.scheduleStatus === 'overdue').length
+          overdue: due.filter(c => c.scheduleStatus === 'overdue').length,
+          reservations: reservations.length,
+          depositsPaid: paid.length,
+          // Started checkout but never came back. Worth chasing — they got as
+          // far as the card screen, so the intent was real.
+          depositsPending: reservations.filter(r => r.depositStatus !== 'paid' && r.checkoutStartedAt).length,
+          depositsPence
         },
         leads, customers, due
       });

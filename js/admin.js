@@ -52,7 +52,8 @@ const STORE_LABELS = {
   enquiries: 'Enquiry',
   'commercial-quotes': 'Commercial quote',
   bookings: 'Booking request',
-  'interest-registrations': 'Area interest'
+  'interest-registrations': 'Area interest',
+  reservations: 'October reservation'
 };
 const LEAD_STATUSES = ['new', 'contacted', 'quoted', 'won', 'lost'];
 
@@ -75,16 +76,48 @@ function sourceText(s) {
   return '—';
 }
 
+/** Pence to "£25" / "£25.50". Money shown as 2500 would be worse than useless. */
+function money(pence) {
+  const n = Number(pence) || 0;
+  return n % 100 === 0 ? `£${n / 100}` : `£${(n / 100).toFixed(2)}`;
+}
+
 function renderCounts(c) {
-  $('admin-counts').innerHTML = [
+  const tiles = [
     ['New leads', c.newLeads, c.newLeads > 0 ? 'amber' : ''],
     ['Total leads', c.leads, ''],
     ['Active customers', c.customers, ''],
     ['Visits due', c.due, ''],
     ['Overdue', c.overdue, c.overdue > 0 ? 'red' : '']
-  ].map(([label, n, tone]) =>
+  ];
+
+  // Only show the deposit tiles once there's something to show. An empty
+  // "£0 taken" tile on day one is just discouraging noise.
+  if (c.reservations) {
+    tiles.push(['Deposits paid', `${c.depositsPaid} / ${c.reservations}`, c.depositsPaid > 0 ? 'yes' : '']);
+    tiles.push(['Taken', money(c.depositsPence), '']);
+    // Reached the card screen and didn't finish. These are the warmest leads
+    // on the page and the easiest thing to lose by not noticing them.
+    if (c.depositsPending) tiles.push(['Abandoned at payment', c.depositsPending, 'amber']);
+  }
+
+  $('admin-counts').innerHTML = tiles.map(([label, n, tone]) =>
     `<div class="admin-stat ${tone}"><div class="n">${esc(n)}</div><div class="l">${esc(label)}</div></div>`
   ).join('');
+}
+
+/** What a reservation's deposit is doing, in words rather than a raw field. */
+function depositCell(l) {
+  if (l._store !== 'reservations') return '<span class="text-muted">—</span>';
+  if (l.depositStatus === 'paid') {
+    return `<span class="yes"><strong>${esc(money(l.depositAmount))} paid</strong></span>` +
+           `<div class="text-muted text-xs">${fmtDate(l.paidAt)}</div>`;
+  }
+  if (l.checkoutStartedAt) {
+    return '<span class="no">Not paid</span>' +
+           '<div class="text-muted text-xs">left at the card screen</div>';
+  }
+  return '<span class="text-muted">Not started</span>';
 }
 
 function renderDue(due) {
@@ -120,6 +153,7 @@ function renderLeads(leads) {
       <td><strong>${esc(name)}</strong>${l.postcode ? `<div class="text-muted text-xs">${esc(l.postcode)}</div>` : ''}</td>
       <td class="text-xs">${contact}</td>
       <td class="text-xs">${esc(STORE_LABELS[l._store] || l._store)}</td>
+      <td class="text-xs">${depositCell(l)}</td>
       <td class="text-xs">${esc(sourceText(l.source))}</td>
       <td><select class="admin-select" data-lead-store="${esc(l._store)}" data-lead-id="${esc(l.id)}">${opts}</select></td>
       <td>${converted
