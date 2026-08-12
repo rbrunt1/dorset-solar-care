@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reserve an October slot | SolarMOT</title>
+<meta name="description" content="We are booking October solar panel visits across Dorset. Reserve a slot for your home with a refundable £25 deposit, credited in full against your first month.">
+<meta name="theme-color" content="#06201A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400..650&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="canonical" href="https://solarmot.co.uk/reserve">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SolarMOT">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://solarmot.co.uk/reserve">
+<meta property="og:title" content="Reserve an October slot | SolarMOT">
+<meta property="og:description" content="We're booking October solar panel visits across Dorset. Reserve a slot with a refundable £25 deposit, credited in full against your first month.">
+<meta property="og:image" content="https://solarmot.co.uk/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SolarMOT — your car gets an MOT, why doesn't your solar array?">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Reserve an October slot | SolarMOT">
+<meta name="twitter:description" content="We're booking October solar panel visits across Dorset. Reserve a slot with a refundable £25 deposit.">
+<meta name="twitter:image" content="https://solarmot.co.uk/assets/og-image.png">
+<link rel="stylesheet" href="css/styles.css">
+<script>document.documentElement.classList.add('js');</script>
+
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"><img src="assets/logo-icon.svg" width="34" height="34" alt="" aria-hidden="true"></span>
+      Solar<span class="mot">MOT</span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#0B3A2E" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="service-area.html">Service Area</a></li>
+      <li><a href="about.html">About &amp; Trust</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="contact.html" class="btn btn-secondary btn-sm">Get a quote</a>
+      <a href="pricing.html" class="btn btn-primary btn-sm">Book an MOT</a>
+    </div>
+  </nav>
+</header>
+
+
+<section>
+  <div class="container container-narrow">
+
+    <p class="eyebrow">Booking now &middot; October visits</p>
+    <h1>Reserve your October slot</h1>
+    <p class="lede">
+      We&rsquo;re scheduling October across Dorset, working one postcode area at a time so we&rsquo;re
+      not criss-crossing the county all day. That means slots in each area are limited by how many
+      homes one person can properly look after.
+    </p>
+
+    <div class="card" style="margin:26px 0;">
+      <h2 style="margin-top:0;font-size:19px;">How reserving works</h2>
+      <ol style="margin:0;padding-left:20px;line-height:1.8;">
+        <li><strong>Reserve your slot</strong> with a &pound;25 deposit.</li>
+        <li><strong>We agree a date</strong> when we&rsquo;re scheduling your area, and fit around you.</li>
+        <li><strong>Your deposit comes off your first month</strong> &mdash; it isn&rsquo;t an extra charge.</li>
+      </ol>
+      <p class="text-muted text-sm" style="margin:16px 0 0;">
+        <strong>The deposit is fully refundable.</strong> Change your mind at any point before your
+        visit and we&rsquo;ll refund it &mdash; no reason needed. You also have a 14-day right to
+        cancel under the Consumer Contracts Regulations 2013.
+      </p>
+    </div>
+
+    <form id="reservation-form">
+      <div class="field-row">
+        <div class="field">
+          <label for="rv-name">Full name</label>
+          <input type="text" id="rv-name" name="name" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label for="rv-postcode">Postcode</label>
+          <input type="text" id="rv-postcode" name="postcode" autocomplete="postal-code" placeholder="e.g. BH12 1AA" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="rv-address">Address</label>
+        <input type="text" id="rv-address" name="address1" autocomplete="street-address" placeholder="House number and street" required>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="rv-email">Email</label>
+          <input type="email" id="rv-email" name="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="rv-phone">Phone (optional)</label>
+          <input type="tel" id="rv-phone" name="phone" autocomplete="tel">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="rv-month">Preferred month</label>
+          <select id="rv-month" name="preferredMonth">
+            <option value="2026-10">October 2026</option>
+            <option value="2026-11">November 2026</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="rv-plan">Plan you&rsquo;re leaning towards</label>
+          <select id="rv-plan" name="plan">
+            <option value="undecided">Not sure yet &mdash; talk me through it</option>
+            <option value="essential">Essential &mdash; &pound;19.99/mo</option>
+            <option value="standard">Standard &mdash; &pound;29.99/mo</option>
+            <option value="premium">Premium &mdash; &pound;39.99/mo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="rv-age">Roughly how old is your system?</label>
+        <input type="text" id="rv-age" name="panelAge" placeholder="e.g. 2019, or &quot;no idea&quot;">
+      </div>
+
+      <div class="field">
+        <label for="rv-notes">Anything we should know? (optional)</label>
+        <textarea id="rv-notes" name="notes" placeholder="Access, a dog in the garden, output that&rsquo;s dropped off &mdash; anything useful."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Reserve my slot</button>
+      <p class="text-muted text-xs" style="margin-top:14px;">
+        Next step: a &pound;25 refundable deposit via Stripe. We never see or store your card details. Your address is used to plan the visit and
+        nothing else. See our <a href="privacy.html">privacy policy</a>.
+      </p>
+    </form>
+
+    <div id="reservation-done" class="card" style="display:none;margin-top:26px;">
+      <h2 style="margin-top:0;font-size:19px;">You&rsquo;re on the October list</h2>
+      <p>Thanks &mdash; we have your details and a confirmation email is on its way. We&rsquo;ll be
+         in touch to agree a date once we&rsquo;re scheduling your area.</p>
+      <p class="text-muted text-sm" style="margin-bottom:0;">
+        Anything urgent meanwhile, call <a href="tel:+447891110865">07891 110865</a>.
+      </p>
+      <p id="deposit-problem" style="display:none;margin:16px 0 0;padding:12px 14px;background:#FFF6E5;border-radius:8px;font-size:14px;">
+        We couldn&rsquo;t open the payment page just now &mdash; but <strong>your reservation is
+        saved</strong>. We&rsquo;ll be in touch to sort the deposit, or call us on
+        <a href="tel:+447891110865">07891 110865</a>.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="brand">
+          <span class="brand-mark"><img src="assets/logo-icon.svg" width="34" height="34" alt="" aria-hidden="true"></span>
+          Solar<span class="mot">MOT</span>
+        </a>
+        <p>Subscription solar panel cleaning, inspection and minor repairs for homes and businesses. Currently booking in Dorset, expanding across the South West.</p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About &amp; Trust</a></li>
+          <li><a href="service-area.html">Service Area</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Plans</h4>
+        <ul>
+          <li><a href="pricing.html">Residential plans</a></li>
+          <li><a href="pricing.html#commercial">Commercial enquiry</a></li>
+          <li><a href="booking.html">Book a visit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Get in touch</h4>
+        <ul>
+          <li><a href="mailto:hello@solarmot.co.uk">hello@solarmot.co.uk</a></li>
+          <li><a href="tel:+447891110865">07891 110865</a></li>
+          <li>Dorset, England</li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms &amp; Conditions</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span data-year></span> SolarMOT Ltd. Registered in England &amp; Wales. Maintenance &amp; cleaning services only &mdash; not an MCS-certified installer. "MOT" is used descriptively and does not refer to any statutory test.</span>
+      <span>Direct Debit powered by GoCardless.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+
+<script>
+  // Reservation submit. Uses the shared submitForm(), so the honeypot, fill-time
+  // trap and lead-source attribution all apply without repeating them here —
+  // which is what makes leaflet response measurable.
+  document.getElementById('reservation-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    submitForm(this, '/api/submit-reservation', async (result) => {
+      // The reservation is already saved at this point. Everything below is
+      // about the deposit, so nothing here may lose the reservation — if
+      // checkout can't be opened we say so honestly rather than pretending
+      // the whole thing failed.
+      const done = document.getElementById('reservation-done');
+      this.style.display = 'none';
+      done.style.display = 'block';
+      done.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      if (!result || !result.id) return;
+      try {
+        const res = await fetch('/api/create-deposit-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reservationId: result.id })
+        });
+        const body = await res.json();
+        if (body && body.url) { window.location.href = body.url; return; }
+        if (body && body.alreadyPaid) return;
+        document.getElementById('deposit-problem').style.display = 'block';
+      } catch (err) {
+        document.getElementById('deposit-problem').style.display = 'block';
+      }
+    });
+  });
+</script>
+</body>
+</html>
