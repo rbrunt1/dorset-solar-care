@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reserve an October slot | SolarMOT</title>
-<meta name="description" content="We are booking October solar panel visits across Dorset. Reserve a slot for your home with a refundable £25 deposit, credited in full against your first month.">
+<title>Reserve an October Solar Panel Visit | Dorset | SolarMOT</title>
+<meta name="description" content="We are booking October solar panel cleans and inspections across Dorset. A refundable £25 deposit holds your slot and comes off your first month.">
 <meta name="theme-color" content="#06201A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,15 +19,15 @@
 <meta property="og:site_name" content="SolarMOT">
 <meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://solarmot.co.uk/reserve">
-<meta property="og:title" content="Reserve an October slot | SolarMOT">
-<meta property="og:description" content="We're booking October solar panel visits across Dorset. Reserve a slot with a refundable £25 deposit, credited in full against your first month.">
+<meta property="og:title" content="Reserve an October Solar Panel Visit | Dorset | SolarMOT">
+<meta property="og:description" content="We are booking October solar panel cleans and inspections across Dorset. A refundable £25 deposit holds your slot and comes off your first month.">
 <meta property="og:image" content="https://solarmot.co.uk/assets/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="SolarMOT — your car gets an MOT, why doesn't your solar array?">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Reserve an October slot | SolarMOT">
-<meta name="twitter:description" content="We're booking October solar panel visits across Dorset. Reserve a slot with a refundable £25 deposit.">
+<meta name="twitter:title" content="Reserve an October Solar Panel Visit | Dorset | SolarMOT">
+<meta name="twitter:description" content="We are booking October solar panel cleans and inspections across Dorset. A refundable £25 deposit holds your slot and comes off your first month.">
 <meta name="twitter:image" content="https://solarmot.co.uk/assets/og-image.png">
 <link rel="stylesheet" href="css/styles.css">
 <script>document.documentElement.classList.add('js');</script>
@@ -53,7 +53,7 @@
     </ul>
     <div class="nav-cta">
       <a href="contact.html" class="btn btn-secondary btn-sm">Get a quote</a>
-      <a href="pricing.html" class="btn btn-primary btn-sm">Book an MOT</a>
+      <a href="reserve.html" class="btn btn-primary btn-sm">Reserve a slot</a>
     </div>
   </nav>
 </header>
@@ -61,6 +61,12 @@
 
 <section>
   <div class="container container-narrow">
+
+    <p id="checkout-cancelled" style="display:none;margin:0 0 22px;padding:14px 16px;background:#FFF6E5;border-radius:8px;font-size:15px;">
+      No payment was taken. If you&rsquo;d already filled the form in, <strong>your details are
+      saved</strong> and we&rsquo;ll be in touch &mdash; there&rsquo;s no need to do it again.
+      To finish the deposit now, just fill it in below and we&rsquo;ll take you back to the payment page.
+    </p>
 
     <p class="eyebrow">Booking now &middot; October visits</p>
     <h1>Reserve your October slot</h1>
@@ -204,7 +210,7 @@
     </div>
     <div class="footer-bottom">
       <span>&copy; <span data-year></span> SolarMOT. Maintenance &amp; cleaning services only &mdash; not an MCS-certified installer. "MOT" is used descriptively and does not refer to any statutory test.</span>
-      <span>Direct Debit powered by GoCardless.</span>
+      <span>Reserving an October slot takes a &pound;25 refundable deposit. Monthly Direct Debit starts when your visits do.</span>
     </div>
   </div>
 </footer>
@@ -212,6 +218,25 @@
 <script src="js/main.js"></script>
 
 <script>
+  // Arriving from a pricing card: carry the plan they clicked through, so they
+  // don't have to pick it twice. Only values the form actually offers.
+  (function preselectPlan() {
+    const wanted = new URLSearchParams(location.search).get('plan');
+    if (!wanted) return;
+    const select = document.getElementById('rv-plan');
+    const match = [...select.options].find(o => o.value === wanted.toLowerCase());
+    if (match) select.value = match.value;
+  })();
+
+  // Coming back from an abandoned Stripe checkout. Their details ARE saved, so
+  // say so — otherwise they assume the whole thing failed and start again, or
+  // worse, don't.
+  (function noteCancelled() {
+    if (!new URLSearchParams(location.search).has('cancelled')) return;
+    const el = document.getElementById('checkout-cancelled');
+    if (el) el.style.display = 'block';
+  })();
+
   // Reservation submit. Uses the shared submitForm(), so the honeypot, fill-time
   // trap and lead-source attribution all apply without repeating them here —
   // which is what makes leaflet response measurable.
