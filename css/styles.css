@@ -1021,6 +1021,15 @@ section { padding: clamp(64px, 8vw, 104px) 0; }
 .legal-updated { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--ink-100);
   font-size: .87rem; color: var(--ink-500); }
 
+/* An unfinished legal detail must LOOK unfinished. A placeholder that reads like
+   ordinary body text is how a site ends up trading against terms that name
+   nobody. */
+.legal-todo {
+  display: inline-block; background: var(--amber-100); color: var(--ink-900);
+  border: 1px dashed var(--amber-500); border-radius: var(--radius-sm);
+  padding: 2px 8px; margin-right: 6px; font-size: .88em; letter-spacing: .01em;
+}
+
 /* ---------- Admin dashboard ---------- */
 body.admin { background: var(--ink-50); }
 .admin-bar { background: var(--deep-950); color: var(--white); padding: 12px 0; }
